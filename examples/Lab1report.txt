@@ -1,0 +1,106 @@
+Task 1:
+Runtime: Python 3.6 (I did it with both 2.7 and 3.6 and it is compatible with either though seems to have been written
+for 2.7)
+Handler: lambda_function.lambda_handler
+Execution Role: lambda_basic_execution
+Memory: 128MB
+Timeout: 0min 3sec
+
+Three default intents:
+AMAZON.CancelIntent
+AMAZON.HelpIntent
+AMAZON.StopIntent
+
+The color picker lambda function repeats the welcome response for the HelpIntent, and exits the session for either the
+CancelIntent or the StopIntent. From the documentation, they recommend Cancel and Stop both map to exiting unless
+there is some reason (like performing an action of ordering) to map them to separate things.
+
+The difference between 'my favorite color is Color' and 'my favorite color is {Color}' is that in the former, the intent
+utterance expects the user to utter that literal phrase, whereas in the second, it expects the user to utter the phrase
+'my favorite color is' and then will store whatever follows in the {Color} slot.
+
+The JSON objects represent the languageModel, where the Intents have invocation samples (save the three defaults, which
+do not as presumably those are controlled by Amazon Alexa) and the slots supposedly define the possible utterances
+that can fill those spaces.
+
+{
+	"version": "1.0",
+	"session": {
+		"new": false,
+		"sessionId": "amzn1.echo-api.session.20b2b919-4cfb-430b-948b-ca438c7bfbb7",
+		"application": {
+			"applicationId": "amzn1.ask.skill.63e80f86-4fc3-4cae-9e2a-26e18ca67140"
+		},
+		"attributes": {
+			"favoriteColor": "grapefruit"
+		},
+		"user": {
+			"userId": "amzn1.ask.account.AEZNIWELFRX7ST4POSOK6G6G4CDGNT6Y36JZNB3TFFC7NCSUHSWT6IENQP5ELHFHG5BEO46WDQ223477QJEZ6XHBON54GYAVAUIXDMGCRFHY4WLTPHJRM7CSXSCLHCEMMO2SFESCB5QKJLECE25TE3NGY5YVRZOKSZ7OYJ7DD6T5R2ZBQKAY6Y54EOGEQEUWWAWK2A7J4DY3QNI"
+		}
+	},
+	"context": {
+		"AudioPlayer": {
+			"playerActivity": "IDLE"
+		},
+		"Display": {
+			"token": ""
+		},
+		"System": {
+			"application": {
+				"applicationId": "amzn1.ask.skill.63e80f86-4fc3-4cae-9e2a-26e18ca67140"
+			},
+			"user": {
+				"userId": "amzn1.ask.account.AEZNIWELFRX7ST4POSOK6G6G4CDGNT6Y36JZNB3TFFC7NCSUHSWT6IENQP5ELHFHG5BEO46WDQ223477QJEZ6XHBON54GYAVAUIXDMGCRFHY4WLTPHJRM7CSXSCLHCEMMO2SFESCB5QKJLECE25TE3NGY5YVRZOKSZ7OYJ7DD6T5R2ZBQKAY6Y54EOGEQEUWWAWK2A7J4DY3QNI"
+			},
+			"device": {
+				"deviceId": "amzn1.ask.device.AHOWLH7RVE4XGIWSCVH7WOGR6YVVEZE2MMH4EDT2WLWBBGNM75RJWLM6GIT5HSB4NNZ3W72XYWCHK3DOYKD3WGZXUT3CAK2QUMAYQ45JC4F2AES4QE5GOHNX5GZ42XXHVOLPW52WRMWC7J2H2BUCVV25Q3VARQHXMX43AAS2JHUBBJ5IVT5N2",
+				"supportedInterfaces": {
+					"AudioPlayer": {},
+					"Display": {
+						"templateVersion": "1.0",
+						"markupVersion": "1.0"
+					}
+				}
+			},
+			"apiEndpoint": "https://api.amazonalexa.com",
+			"apiAccessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjEifQ.eyJhdWQiOiJodHRwczovL2FwaS5hbWF6b25hbGV4YS5jb20iLCJpc3MiOiJBbGV4YVNraWxsS2l0Iiwic3ViIjoiYW16bjEuYXNrLnNraWxsLjYzZTgwZjg2LTRmYzMtNGNhZS05ZTJhLTI2ZTE4Y2E2NzE0MCIsImV4cCI6MTUyMjczMTU4NCwiaWF0IjoxNTIyNzI3OTg0LCJuYmYiOjE1MjI3Mjc5ODQsInByaXZhdGVDbGFpbXMiOnsiY29uc2VudFRva2VuIjpudWxsLCJkZXZpY2VJZCI6ImFtem4xLmFzay5kZXZpY2UuQUhPV0xIN1JWRTRYR0lXU0NWSDdXT0dSNllWVkVaRTJNTUg0RURUMldMV0JCR05NNzVSSldMTTZHSVQ1SFNCNE5OWjNXNzJYWVdDSEszRE9ZS0QzV0daWFVUM0NBSzJRVU1BWVE0NUpDNEYyQUVTNFFFNUdPSE5YNUdaNDJYWEhWT0xQVzUyV1JNV0M3SjJIMkJVQ1ZWMjVRM1ZBUlFIWE1YNDNBQVMySkhVQkJKNUlWVDVOMiIsInVzZXJJZCI6ImFtem4xLmFzay5hY2NvdW50LkFFWk5JV0VMRlJYN1NUNFBPU09LNkc2RzRDREdOVDZZMzZKWk5CM1RGRkM3TkNTVUhTV1Q2SUVOUVA1RUxIRkhHNUJFTzQ2V0RRMjIzNDc3UUpFWjZYSEJPTjU0R1lBVkFVSVhETUdDUkZIWTRXTFRQSEpSTTdDU1hTQ0xIQ0VNTU8yU0ZFU0NCNVFLSkxFQ0UyNVRFM05HWTVZVlJaT0tTWjdPWUo3REQ2VDVSMlpCUUtBWTZZNTRFT0dFUUVVV1dBV0syQTdKNERZM1FOSSJ9fQ.QkeT_4LcFAqt_sLT5wcaMt0goKSuomrgv9sqyMVNs-3FLJtq_niuuwS3S4gPztVNUp8kzeJb3RQSRjzeB4aWfpK7aQ2k5IdGEjVAOCrXsWqilPbrihL3Ry9rb2EffNy3O6uKAlWO2XvCuiGcZAtl0wC0Xcm2jzYbNflQN0mrBI1AqlaROxGrXQ8S86QB97ENf_dAAi_YmxKZvEg21swPNe3o4Kb2GJW8ba-cb8r0WjikBdcwQCwwt7N9UIh9rjaxtv9h5QlpG59BBIcpzTNoTBqtR4W1mpzYgo8Ztc3IHlX93A25MYOeBgDSuQXuiJExi1BdVk5Jhxye-kc0g4azgQ"
+		}
+	},
+	"request": {
+		"type": "IntentRequest",
+		"requestId": "amzn1.echo-api.request.46b0d636-0246-4e99-b13f-6607875c3d64",
+		"timestamp": "2018-04-03T03:59:44Z",
+		"locale": "en-US",
+		"intent": {
+			"name": "WhatsMyColorIntent",
+			"confirmationStatus": "NONE"
+		}
+	}
+}
+
+
+Skill ID: amzn1.ask.skill.63e80f86-4fc3-4cae-9e2a-26e18ca67140
+Endpoint: arn:aws:lambda:us-east-1:155293995481:function:myColorSkill
+
+Report:
+
+JSON object of Interaction Model definition attached.
+Field Descriptions:
+The first three intents are defaults, which is why they have no samples (I could add them to augment the default that
+exists).
+WhatsMyColorIntent has sample speech acts that activate it 'samples', but does not capture and store any info.
+MyColorIsIntent captures slots from the response, in this case Color slots
+
+Both are matched to the LambdaFunction Intent codes. MyColorIsIntent calls the set_color_in_session function and
+WhatsMyColorIntent calls the get_color_from_session function.
+
+Functions in python that correspond to Handlers in Nodejs:
+NewSession
+LaunchRequest
+SessionEndedRequest
+MyColorIsIntent
+WhatsMyColorIntent
+AMAZON.HelpIntent
+AMAZON.CancelIntent
+AMAZON.StopIntent
+Unhandled
