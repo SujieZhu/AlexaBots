@@ -23,12 +23,12 @@
                             "type": "AMAZON.Food"
                         },
                         {
-                            "name": "RequestRec",
-                            "type": "Request"
+                            "name": "RequestRecPrefix",
+                            "type": "RequestRecPrefix"
                         }
                     ],
                     "samples": [
-                        "{RequestRec} {food}",
+                        "{RequestRecPrefix} {food}",
                         "I'd like to eat {food}",
                         "do you know any {food} restaurant ",
                         "{food}",
@@ -85,7 +85,7 @@
             ],
             "types": [
                 {
-                    "name": "Request",
+                    "name": "RequestRecPrefix",
                     "values": [
                         {
                             "name": {
