@@ -2,9 +2,16 @@
 TODO: add description
 """
 
+<<<<<<< HEAD
 from utils.query_api import *
 import logging
 import random
+=======
+from __future__ import print_function
+
+from utils.query_api import search_yelp
+import logging
+>>>>>>> version 0 test
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -376,6 +383,7 @@ def set_cuisine(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
+<<<<<<< HEAD
     cuisine = None
     if 'food' in intent['slots']:
         cuisine = intent['slots']['food']['value']
@@ -387,6 +395,24 @@ def set_cuisine(intent, session):
     if location is not None and cuisine is not None:
         places = search_yelp(keyword=cuisine, location=location, limit=1)
         update_restaurant_attributes(session_attributes, places[0])
+=======
+    if 'Location' in intent['slots']:
+        location = intent['slots']['Location']['value']
+        cuisine = get_cuisine(intent, session)
+        session_attributes.update(create_location_attributes(location))
+        places = search_yelp(keyword=cuisine, location=location, search_limit=1)
+
+        speech_output = "I now know your location is " + location + " and your favorite food is " + cuisine + "."\
+                        " How about "+places[0]['name']+ "?"
+        reprompt_text = "I now know your location"
+
+    else:
+        speech_output = "I'm not sure what your favorite cuisine is. " \
+                        "Please try again."
+        reprompt_text = "I'm not sure what your favorite cuisine is. " 
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+>>>>>>> version 0 test
 
     return build_output(session_attributes, card_title, should_end_session)
 

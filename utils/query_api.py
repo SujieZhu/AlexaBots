@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+
+# from googleplaces import GooglePlaces, types
+from urllib import quote
+>>>>>>> version 0 test
 from botocore.vendored import requests
 
 # API Keys (linked to my personal google and yelp accounts)
@@ -10,6 +16,7 @@ GOOGLE_NEARBYSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/nearbysea
 GOOGLE_TEXTSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/textsearch/json'
 GOOGLE_DETAIL_PATH = 'https://maps.googleapis.com/maps/api/place/details/json'
 
+<<<<<<< HEAD
 YELP_SEARCH_PATH = 'https://api.yelp.com/v3/businesses/search'
 YELP_BUSINESS_PATH = 'https://api.yelp.com/v3/businesses/'  # Business ID will come after slash.
 
@@ -56,6 +63,74 @@ def get_google_detail(placeid, api_key=GOOGLE_KEY):
 
 # --------------------------------- YELP ---------------------------------- #
 def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True):
+=======
+# # --------------------------------- GOOGLE ---------------------------------- #
+# def search_google(api_key, location, keyword, radius=8000, types=[types.TYPE_FOOD]):
+#     """Query the Google Search API by a search term and location.
+
+#         Args:
+#             api_key
+#             location (str): The search location passed to the API.
+#             keyword
+
+#         Returns:
+#             places: The JSON response from the request.
+#     """
+#     # Google places module
+#     google_places = GooglePlaces(api_key)
+
+#     # Options: text_search or nearby_search
+#     query_result = google_places.nearby_search(
+#             location=location, keyword=keyword,
+#             radius=radius, types=types)
+
+#     if query_result.has_attributions:
+#         print query_result.html_attributions
+#     # No attributions here
+
+#     g_places = list(query_result.places)
+#     places = []
+#     for g_place in g_places:
+#         place = {}
+#         place['name'] = g_place.name
+#         place['geo_location'] = g_place.geo_location
+#         place['place_id'] = g_place.place_id
+#         g_place.get_details()
+#         place['details'] = g_place.details
+#         places.append(place)
+#     return places
+
+    # '''GOOGLE Place Attributes ----------------- #
+    #     name
+    #     geo_location
+    #     place_id
+    #     details
+    #         rating
+    #         utc_offset
+    #         name
+    #         reference
+    #         photos
+    #         geometry
+    #         adr_address
+    #         place_id
+    #         international_phone_number
+    #         vicinity
+    #         reviews
+    #         formatted_phone_number
+    #         scope
+    #         url
+    #         opening_hours
+    #         address_components
+    #         formatted_address
+    #         id
+    #         types
+    #         icon
+    # '''
+
+
+# --------------------------------- YELP ---------------------------------- #
+def search_yelp( keyword, location,api_key=YELP_KEY, search_limit=1):
+>>>>>>> version 0 test
     """Query the YELP Search API by a search term and location.
     Args:
         term (str): The search term passed to the API.
@@ -76,10 +151,17 @@ def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, op
         'limit': limit
     }
 
+<<<<<<< HEAD
     if open_now: url_params['open_now'] = True
     elif open_at: url_params['open_at'] = open_at
 
     places = request(YELP_SEARCH_PATH, api_key, url_params=url_params)
+=======
+    places = request(YELP_API_HOST, SEARCH_PATH, api_key, url_params=url_params)
+    print(places)
+    print(places['businesses'])
+    print(places['businesses'][0]['name'])
+>>>>>>> version 0 test
     return places['businesses']
     '''YELP Places Attributes 
         region
@@ -134,8 +216,13 @@ def request(path, api_key, url_params=None):
     """
     url_params = url_params or {}
     headers = {'Authorization': 'Bearer %s' % api_key,}
+<<<<<<< HEAD
 
     print('Querying {0} ...'.format(path))
+=======
+    print(url_params)
+    print('Querying {0} ...'.format(url))
+>>>>>>> version 0 test
 
     response = requests.request('GET', path, headers=headers, params=url_params)
 
@@ -143,6 +230,7 @@ def request(path, api_key, url_params=None):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     google_places = search_google(keyword='Seattle seafood', location='47.606210, -122.332070', radius=8000)  # location='47.606210, -122.332070', radius=8000
     yelp_places = search_yelp(keyword='Chinese', location='Seattle', limit=1)
 
@@ -151,3 +239,10 @@ if __name__ == '__main__':
     
     yelp_places = search_yelp_business('NCDpIDp2f-DhPO5sL5Hbdw')
     print('\nYelp: \n', yelp_places)
+=======
+    # google_places = search_google(api_key=GOOGLE_KEY, location='Seattle', keyword='seafood', radius=8000, types=[types.TYPE_FOOD])
+    yelp_places = search_yelp(api_key=YELP_KEY, keyword='seafood', location='Seattle', search_limit=1)
+
+    # print 'Google: \n', google_places[0]
+    print '\nYelp: \n',yelp_places[0]
+>>>>>>> version 0 test
