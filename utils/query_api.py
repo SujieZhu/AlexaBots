@@ -1,7 +1,7 @@
 
-from googleplaces import GooglePlaces, types
+# from googleplaces import GooglePlaces, types
 from urllib import quote
-import requests
+from botocore.vendored import requests
 
 # API Keys (linked to my personal google and yelp accounts)
 # Maximum number of queries per day: 5000
@@ -14,72 +14,72 @@ SEARCH_PATH = '/v3/businesses/search'
 BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
 
 
-# --------------------------------- GOOGLE ---------------------------------- #
-def search_google(api_key, location, keyword, radius=8000, types=[types.TYPE_FOOD]):
-    """Query the Google Search API by a search term and location.
+# # --------------------------------- GOOGLE ---------------------------------- #
+# def search_google(api_key, location, keyword, radius=8000, types=[types.TYPE_FOOD]):
+#     """Query the Google Search API by a search term and location.
 
-        Args:
-            api_key
-            location (str): The search location passed to the API.
-            keyword
+#         Args:
+#             api_key
+#             location (str): The search location passed to the API.
+#             keyword
 
-        Returns:
-            places: The JSON response from the request.
-    """
-    # Google places module
-    google_places = GooglePlaces(api_key)
+#         Returns:
+#             places: The JSON response from the request.
+#     """
+#     # Google places module
+#     google_places = GooglePlaces(api_key)
 
-    # Options: text_search or nearby_search
-    query_result = google_places.nearby_search(
-            location=location, keyword=keyword,
-            radius=radius, types=types)
+#     # Options: text_search or nearby_search
+#     query_result = google_places.nearby_search(
+#             location=location, keyword=keyword,
+#             radius=radius, types=types)
 
-    if query_result.has_attributions:
-        print query_result.html_attributions
-    # No attributions here
+#     if query_result.has_attributions:
+#         print query_result.html_attributions
+#     # No attributions here
 
-    g_places = list(query_result.places)
-    places = []
-    for g_place in g_places:
-        place = {}
-        place['name'] = g_place.name
-        place['geo_location'] = g_place.geo_location
-        place['place_id'] = g_place.place_id
-        g_place.get_details()
-        place['details'] = g_place.details
-        places.append(place)
-    return places
+#     g_places = list(query_result.places)
+#     places = []
+#     for g_place in g_places:
+#         place = {}
+#         place['name'] = g_place.name
+#         place['geo_location'] = g_place.geo_location
+#         place['place_id'] = g_place.place_id
+#         g_place.get_details()
+#         place['details'] = g_place.details
+#         places.append(place)
+#     return places
 
-    '''GOOGLE Place Attributes ----------------- #
-        name
-        geo_location
-        place_id
-        details
-            rating
-            utc_offset
-            name
-            reference
-            photos
-            geometry
-            adr_address
-            place_id
-            international_phone_number
-            vicinity
-            reviews
-            formatted_phone_number
-            scope
-            url
-            opening_hours
-            address_components
-            formatted_address
-            id
-            types
-            icon
-    '''
+    # '''GOOGLE Place Attributes ----------------- #
+    #     name
+    #     geo_location
+    #     place_id
+    #     details
+    #         rating
+    #         utc_offset
+    #         name
+    #         reference
+    #         photos
+    #         geometry
+    #         adr_address
+    #         place_id
+    #         international_phone_number
+    #         vicinity
+    #         reviews
+    #         formatted_phone_number
+    #         scope
+    #         url
+    #         opening_hours
+    #         address_components
+    #         formatted_address
+    #         id
+    #         types
+    #         icon
+    # '''
 
 
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(api_key, keyword, location, search_limit=1):
+def search_yelp( keyword, location,api_key=YELP_KEY, search_limit=1):
     """Query the YELP Search API by a search term and location.
 
     Args:
@@ -97,6 +97,9 @@ def search_yelp(api_key, keyword, location, search_limit=1):
     }
 
     places = request(YELP_API_HOST, SEARCH_PATH, api_key, url_params=url_params)
+    print(places)
+    print(places['businesses'])
+    print(places['businesses'][0]['name'])
     return places['businesses']
     '''YELP Places Attributes 
         region
@@ -156,7 +159,7 @@ def request(host, path, api_key, url_params=None):
     url_params = url_params or {}
     url = '{0}{1}'.format(host, quote(path.encode('utf8')))
     headers = {'Authorization': 'Bearer %s' % api_key,}
-
+    print(url_params)
     print('Querying {0} ...'.format(url))
 
     response = requests.request('GET', url, headers=headers, params=url_params)
@@ -165,8 +168,8 @@ def request(host, path, api_key, url_params=None):
 
 
 if __name__ == '__main__':
-    google_places = search_google(api_key=GOOGLE_KEY, location='Seattle', keyword='seafood', radius=8000, types=[types.TYPE_FOOD])
+    # google_places = search_google(api_key=GOOGLE_KEY, location='Seattle', keyword='seafood', radius=8000, types=[types.TYPE_FOOD])
     yelp_places = search_yelp(api_key=YELP_KEY, keyword='seafood', location='Seattle', search_limit=1)
 
-    print 'Google: \n', google_places[0]
+    # print 'Google: \n', google_places[0]
     print '\nYelp: \n',yelp_places[0]

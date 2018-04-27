@@ -9,6 +9,8 @@ http://amzn.to/1LGWsLG
 
 from __future__ import print_function
 
+from utils.query_api import search_yelp
+import logging
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -109,13 +111,16 @@ def set_location(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
-
     if 'Location' in intent['slots']:
         location = intent['slots']['Location']['value']
         cuisine = get_cuisine(intent, session)
         session_attributes.update(create_location_attributes(location))
-        speech_output = "I now know your location is " + location + " and your favorite food is " + cuisine + ". We will offer you recommendation later"
+        places = search_yelp(keyword=cuisine, location=location, search_limit=1)
+
+        speech_output = "I now know your location is " + location + " and your favorite food is " + cuisine + "."\
+                        " How about "+places[0]['name']+ "?"
         reprompt_text = "I now know your location"
+
     else:
         speech_output = "I'm not sure what your favorite cuisine is. " \
                         "Please try again."
@@ -234,3 +239,4 @@ def lambda_handler(event, context):
         return on_intent(event['request'], event['session'])
     elif event['request']['type'] == "SessionEndedRequest":
         return on_session_ended(event['request'], event['session'])
+    return logging.debug()
