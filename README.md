@@ -1,9 +1,9 @@
 # Mos Eisley Cantina
 **An Alexa-based restaurant recommendation system**
-
+_Course Project for EE 596 Conversational Artificial Intelligence - University of Washington_ 
 
 ## Team 
-[Brian Moran](https://github.com/bpmoran), Seraphina Goldfard-Tarrant, Alex Xiao, Sujie Zhu, Qi Hu, Catharine Youngs
+[Brian Moran](https://github.com/bpmoran), Seraphina Goldfard-Tarrant, Alex Xiao, Sujie Zhu, Qi Hu, [Catharine Youngs](https://github.com/cyoungs)
 
 
 ## Running the System
