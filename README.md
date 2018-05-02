@@ -3,4 +3,4 @@
 
 
 ## Team 
-[Brian Moran](www.github.com/bpmoran), Seraphina Goldfard-Tarrant, Alex Xiao, Sujie Zhu, Qi Hu, Catharine Youngs
+[Brian Moran](https://github.com/bpmoran), Seraphina Goldfard-Tarrant, Alex Xiao, Sujie Zhu, Qi Hu, Catharine Youngs
