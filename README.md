@@ -7,10 +7,13 @@ _Course Project for EE 596 Conversational Artificial Intelligence - University o
 
 
 ## Running the System
+ TODO
 
 ## Dependencies 
+TODO
 
 ## Report 
+TODO
 
 ## Collaboration
 This repository has two main (protected) branches:
