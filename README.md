@@ -3,7 +3,7 @@
 _Course Project for EE 596 Conversational Artificial Intelligence - University of Washington_ 
 
 ## Team 
-[Brian Moran](https://github.com/bpmoran), Seraphina Goldfard-Tarrant, Alex Xiao, Sujie Zhu, Qi Hu, [Catharine Youngs](https://github.com/cyoungs)
+[Brian Moran](https://github.com/bpmoran), [Seraphina Goldfarb-Tarrant](https://github.com/seraphinatarrant), Alex Xiao, Sujie Zhu, Qi Hu, [Catharine Youngs](https://github.com/cyoungs)
 
 
 ## Running the System
