@@ -22,4 +22,3 @@ This repository has two main (protected) branches:
 
 * `master` - Contains released (i.e. submitted) commits. No commits should be made to this branch between submissions. Instead, the develop branch should be merged into master when the repository is ready for release and submission, i.e. when all work for a deliverable is complete. This can be done manually or with git flow release (see below).
 
-
