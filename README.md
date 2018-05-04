@@ -11,8 +11,9 @@ _Course Project for EE 596 Conversational Artificial Intelligence - University o
 
 ## Dependencies 
 ### API
-#### Google Places
+#### Google Places through python interface
 pip install https://github.com/slimkrazy/python-google-places/zipball/master OR download source and then `python setup.py install`  
+(This is only required for `google_api_pkg.py`)
 
 ## Report 
 TODO

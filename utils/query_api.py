@@ -1,5 +1,3 @@
-from googleplaces import GooglePlaces, types
-from urllib.parse import quote
 import requests
 
 # API Keys (linked to my personal google and yelp accounts)
@@ -7,78 +5,58 @@ import requests
 GOOGLE_KEY = 'AIzaSyA3MjrJS2k3co8PjJvZD9cJzWJogYj_1AA'
 YELP_KEY = '3WSAdduS5EE1g9QSc7t96ve024MhJ4dFthX_7jmBc_qDaE7D6NDcIQb5XdIA5_JKpIK-8evZ8AsmyVqkneNSGm0vpMSxSbP8lBZ5aiKHHmQl62i9MFZPBGxgY0jYWnYx'
 
-# Yelp API url
-YELP_API_HOST = 'https://api.yelp.com'
-SEARCH_PATH = '/v3/businesses/search'
-BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
+# API urls
+GOOGLE_NEARBYSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
+GOOGLE_TEXTSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/textsearch/json'
+GOOGLE_DETAIL_PATH = 'https://maps.googleapis.com/maps/api/place/details/json'
+
+YELP_SEARCH_PATH = 'https://api.yelp.com/v3/businesses/search'
+YELP_BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
 
 
 # --------------------------------- GOOGLE ---------------------------------- #
-def search_google(api_key, location, keyword, radius=8000, types=[types.TYPE_FOOD]):
-    """Query the Google Search API by a search term and location.
+def search_google(api_key, keyword, location='', radius=8000, types=['restaurant',], limit=1):
+    """Query the Google Search API by a search keyword and location
+       (through https GET request, you don't need to install googleplaces package).
 
-        Args:
-            api_key
-            location (str): The search location passed to the API.
-            keyword
+            Args:
+                api_key
+                keyword
+                location (str): The latitude/longitude, e.g. '47.606210, -122.332070'
+                radius
+                types
+                limit
 
-        Returns:
-            places: The JSON response from the request.
+            Returns:
+                places: The JSON response from the request.
     """
-    # Google places module
-    google_places = GooglePlaces(api_key)
+    url_params = {
+        'query': keyword.replace(' ', '+'),
+        'types': types,
+        'key': api_key
+    }
+    if location != '':
+        url_params['location']=location.replace(' ', '+')
+        url_params['radius'] = radius
 
-    # Options: text_search or nearby_search
-    query_result = google_places.nearby_search(
-            location=location, keyword=keyword,
-            radius=radius, types=types)
-
-    if query_result.has_attributions:
-        print(query_result.html_attributions)
-    # No attributions here
-
-    g_places = list(query_result.places)
-    places = []
-    for g_place in g_places:
-        place = {}
-        place['name'] = g_place.name
-        place['geo_location'] = g_place.geo_location
-        place['place_id'] = g_place.place_id
-        g_place.get_details()
-        place['details'] = g_place.details
-        places.append(place)
+    g_places = request(GOOGLE_TEXTSEARCH_PATH, api_key, url_params=url_params)
+    places = g_places['results'][:limit]
+    for i in range(len(places)):
+        detail = get_google_detail(api_key, places[i]['place_id'])
+        places[i]['detail'] = detail
     return places
 
-    '''GOOGLE Place Attributes ----------------- #
-        name
-        geo_location
-        place_id
-        details
-            rating
-            utc_offset
-            name
-            reference
-            photos
-            geometry
-            adr_address
-            place_id
-            international_phone_number
-            vicinity
-            reviews
-            formatted_phone_number
-            scope
-            url
-            opening_hours
-            address_components
-            formatted_address
-            id
-            types
-            icon
-    '''
 
+def get_google_detail(api_key, placeid):
+    url_params = {
+        'placeid': placeid.replace(' ', '+'),
+        'key': api_key
+    }
+    detail = request(GOOGLE_DETAIL_PATH, api_key, url_params=url_params)
+    return detail['result']
 
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(api_key, keyword, location, search_limit=1):
+def search_yelp(api_key, keyword, location, limit=1):
     """Query the YELP Search API by a search term and location.
 
     Args:
@@ -92,10 +70,10 @@ def search_yelp(api_key, keyword, location, search_limit=1):
     url_params = {
         'term': keyword.replace(' ', '+'),
         'location': location.replace(' ', '+'),
-        'limit': search_limit
+        'limit': limit
     }
 
-    places = request(YELP_API_HOST, SEARCH_PATH, api_key, url_params=url_params)
+    places = request(YELP_SEARCH_PATH, api_key, url_params=url_params)
     return places['businesses']
     '''YELP Places Attributes 
         region
@@ -123,7 +101,7 @@ def search_yelp(api_key, keyword, location, search_limit=1):
         '''
 
 
-def get_business(api_key, business_id):
+def search_yelp_business(api_key, business_id):
     """Query the YELP Business API by a business ID.
 
     Args:
@@ -132,13 +110,14 @@ def get_business(api_key, business_id):
     Returns:
         dict: The JSON response from the request.
     """
-    business_path = BUSINESS_PATH + business_id
+    path = YELP_BUSINESS_PATH + business_id
 
-    return request(YELP_API_HOST, business_path, api_key)
+    return request(path, api_key)
 
 
-def request(host, path, api_key, url_params=None):
-    """Given your YELP API_KEY, send a GET request to the API.
+# --------------------------------- URL wrapper ---------------------------------- #
+def request(path, api_key, url_params=None):
+    """Given your GOOGLE/YELP API_KEY, send a GET request to the API.
 
     Args:
         host (str): The domain host of the API.
@@ -153,19 +132,18 @@ def request(host, path, api_key, url_params=None):
         HTTPError: An error occurs from the HTTP request.
     """
     url_params = url_params or {}
-    url = '{0}{1}'.format(host, quote(path.encode('utf8')))
     headers = {'Authorization': 'Bearer %s' % api_key,}
 
-    print('Querying {0} ...'.format(url))
+    print('Querying {0} ...'.format(path))
 
-    response = requests.request('GET', url, headers=headers, params=url_params)
+    response = requests.request('GET', path, headers=headers, params=url_params)
 
     return response.json()
 
 
 if __name__ == '__main__':
-    google_places = search_google(api_key=GOOGLE_KEY, location='Seattle', keyword='seafood', radius=8000, types=[types.TYPE_FOOD])
-    yelp_places = search_yelp(api_key=YELP_KEY, keyword='seafood', location='Seattle', search_limit=1)
+    google_places = search_google(api_key=GOOGLE_KEY, keyword='Seattle seafood', location='47.606210, -122.332070', radius=8000)  # location='47.606210, -122.332070', radius=8000
+    yelp_places = search_yelp(api_key=YELP_KEY, keyword='seafood', location='Seattle', limit=1)
 
     print('Google: \n', google_places[0])
-    print('\nYelp: \n',yelp_places[0])
+    print('\nYelp: \n', yelp_places[0])
