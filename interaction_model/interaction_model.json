@@ -25,9 +25,38 @@
                         {
                             "name": "RequestRecPrefix",
                             "type": "RequestRecPrefix"
+                        },
+                        {
+                            "name": "restaurant",
+                            "type": "AMAZON.FoodEstablishment"
+                        },
+                        {
+                            "name": "price",
+                            "type": "Price"
+                        },
+                        {
+                            "name": "rating",
+                            "type": "AMAZON.AggregateRating"
                         }
                     ],
                     "samples": [
+                        "{RequestRecPrefix} {rating} {restaurant}",
+                        "{RequestRecPrefix} {rating} {food}",
+                        "{RequestRecPrefix} {food} {price}",
+                        "{RequestRecPrefix} {price} {food}",
+                        "{RequestRecPrefix} {restaurant} that is {price} and serves {food}",
+                        "i need a {restaurant}",
+                        "do you have a {RequestRecPrefix}",
+                        "where can i eat",
+                        "{RequestRecPrefix} somewhere to take my friend ",
+                        "{RequestRecPrefix} somewhere i would like",
+                        "what are some places i should try",
+                        "{RequestRecPrefix} {restaurant} to eat",
+                        "I'm hungry",
+                        "is there a restaurant named {restaurant}",
+                        "I am planning a dinner with my friends",
+                        "{RequestRecPrefix} {restaurant}",
+                        "{RequestRecPrefix} a restaurant named {restaurant}",
                         "{RequestRecPrefix} {food}",
                         "I'd like to eat {food}",
                         "do you know any {food} restaurant ",
@@ -47,9 +76,38 @@
                         {
                             "name": "location",
                             "type": "AMAZON.AT_REGION"
+                        },
+                        {
+                            "name": "RequestRecPrefix",
+                            "type": "RequestRecPrefix"
+                        },
+                        {
+                            "name": "food",
+                            "type": "AMAZON.Food"
+                        },
+                        {
+                            "name": "restaurant",
+                            "type": "AMAZON.FoodEstablishment"
+                        },
+                        {
+                            "name": "proximity",
+                            "type": "Proximity"
+                        },
+                        {
+                            "name": "now",
+                            "type": "Now"
                         }
                     ],
                     "samples": [
+                        "{location} {now} {food}",
+                        "{location} {food} {now}",
+                        "{food} {now} {location}",
+                        "{now} {location} {food}",
+                        "{food} {location} {now}",
+                        "{now} {food} {location}",
+                        "{location} {food}",
+                        "{RequestRecPrefix} about {food} {restaurant} {proximity} {location}",
+                        "{RequestRecPrefix} to try some {food}",
                         "near {location}",
                         "in {location}",
                         "near {zip}",
@@ -69,8 +127,29 @@
                 },
                 {
                     "name": "ChangeRecommendation",
-                    "slots": [],
-                    "samples": []
+                    "slots": [
+                        {
+                            "name": "next",
+                            "type": "Next"
+                        },
+                        {
+                            "name": "place",
+                            "type": "AMAZON.FoodEstablishment"
+                        },
+                        {
+                            "name": "sequence",
+                            "type": "Sequence"
+                        }
+                    ],
+                    "samples": [
+                        "{sequence} please",
+                        "{sequence} one",
+                        "{sequence} {place}",
+                        "{next} {place}",
+                        "{next} one",
+                        "{next} please",
+                        "{next}"
+                    ]
                 },
                 {
                     "name": "ChangeConstraint",
@@ -87,6 +166,71 @@
                 {
                     "name": "RequestRecPrefix",
                     "values": [
+                        {
+                            "name": {
+                                "value": "i need you to recommend "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "can you tell me "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "can you find me"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "I am interested in"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "recommend "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "where"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "I'm in the mood "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "where should they go "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "where should we go"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "where should I go"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "give me"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "I'm looking for"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "recommendation "
+                            }
+                        },
                         {
                             "name": {
                                 "value": "I want"
@@ -125,6 +269,301 @@
                         {
                             "name": {
                                 "value": "I would like"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Data",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "reviews"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "comments"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "other uses"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "opening hours"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "tell me more"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "how much"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "what are"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "what is"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "does it"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "is it"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "is that"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "information about"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "information on"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Now",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "opening"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "open now"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "hungry"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "now"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "starving"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Temporal",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "this weekend"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "next week"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "sunday"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "saturday"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "friday"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "thursday"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "wednesday"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "monday"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "Tuesday"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "tomorrow"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "tonight"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Proximity",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "close"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "nearby"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "by"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "far away "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "near"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Price",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "cost"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "fancy"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "cheap"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "broke"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "AMAZON.FoodEstablishment",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "place"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "restaurant"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Next",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "another please"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "another"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "nah"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "no thanks"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "next"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Sequence",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "fifth"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "fourth"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "third"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "first"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "second"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "previous"
                             }
                         }
                     ]
