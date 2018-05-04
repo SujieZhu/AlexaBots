@@ -10,7 +10,9 @@ _Course Project for EE 596 Conversational Artificial Intelligence - University o
  TODO
 
 ## Dependencies 
-TODO
+### API
+#### Google Places
+pip install https://github.com/slimkrazy/python-google-places/zipball/master OR download source and then `python setup.py install`  
 
 ## Report 
 TODO
@@ -21,4 +23,6 @@ This repository has two main (protected) branches:
 * `develop` (default) - This branch is the main branch for adding commits during development between deliverables. Collaborators should feel free to create branches off of develop for new features, or they can commit to develop directly. All new clones will be placed in the develop branch by default.
 
 * `master` - Contains released (i.e. submitted) commits. No commits should be made to this branch between submissions. Instead, the develop branch should be merged into master when the repository is ready for release and submission, i.e. when all work for a deliverable is complete. This can be done manually or with git flow release (see below).
+
+
 

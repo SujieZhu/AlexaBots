@@ -1,6 +1,5 @@
-
 from googleplaces import GooglePlaces, types
-from urllib import quote
+from urllib.parse import quote
 import requests
 
 # API Keys (linked to my personal google and yelp accounts)
@@ -35,7 +34,7 @@ def search_google(api_key, location, keyword, radius=8000, types=[types.TYPE_FOO
             radius=radius, types=types)
 
     if query_result.has_attributions:
-        print query_result.html_attributions
+        print(query_result.html_attributions)
     # No attributions here
 
     g_places = list(query_result.places)
@@ -168,5 +167,5 @@ if __name__ == '__main__':
     google_places = search_google(api_key=GOOGLE_KEY, location='Seattle', keyword='seafood', radius=8000, types=[types.TYPE_FOOD])
     yelp_places = search_yelp(api_key=YELP_KEY, keyword='seafood', location='Seattle', search_limit=1)
 
-    print 'Google: \n', google_places[0]
-    print '\nYelp: \n',yelp_places[0]
+    print('Google: \n', google_places[0])
+    print('\nYelp: \n',yelp_places[0])
