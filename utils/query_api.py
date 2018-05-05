@@ -15,7 +15,7 @@ YELP_BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
 
 
 # --------------------------------- GOOGLE ---------------------------------- #
-def search_google(api_key, keyword, location='', radius=8000, types=['restaurant',], limit=1):
+def search_google(keyword, location='', radius=8000, types=['restaurant',], limit=1, api_key=GOOGLE_KEY):
     """Query the Google Search API by a search keyword and location
        (through https GET request, you don't need to install googleplaces package).
 
@@ -36,18 +36,18 @@ def search_google(api_key, keyword, location='', radius=8000, types=['restaurant
         'key': api_key
     }
     if location != '':
-        url_params['location']=location.replace(' ', '+')
+        url_params['location'] = location.replace(' ', '+')
         url_params['radius'] = radius
 
     g_places = request(GOOGLE_TEXTSEARCH_PATH, api_key, url_params=url_params)
     places = g_places['results'][:limit]
     for i in range(len(places)):
-        detail = get_google_detail(api_key, places[i]['place_id'])
+        detail = get_google_detail(places[i]['place_id'])
         places[i]['detail'] = detail
     return places
 
 
-def get_google_detail(api_key, placeid):
+def get_google_detail(placeid, api_key=GOOGLE_KEY):
     url_params = {
         'placeid': placeid.replace(' ', '+'),
         'key': api_key
@@ -56,7 +56,7 @@ def get_google_detail(api_key, placeid):
     return detail['result']
 
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(api_key, keyword, location, limit=1):
+def search_yelp(keyword, location, limit=1, api_key=YELP_KEY):
     """Query the YELP Search API by a search term and location.
 
     Args:
@@ -101,7 +101,7 @@ def search_yelp(api_key, keyword, location, limit=1):
         '''
 
 
-def search_yelp_business(api_key, business_id):
+def search_yelp_business(business_id, api_key=YELP_KEY):
     """Query the YELP Business API by a business ID.
 
     Args:
@@ -142,8 +142,8 @@ def request(path, api_key, url_params=None):
 
 
 if __name__ == '__main__':
-    google_places = search_google(api_key=GOOGLE_KEY, keyword='Seattle seafood', location='47.606210, -122.332070', radius=8000)  # location='47.606210, -122.332070', radius=8000
-    yelp_places = search_yelp(api_key=YELP_KEY, keyword='seafood', location='Seattle', limit=1)
+    google_places = search_google(keyword='Seattle seafood', location='47.606210, -122.332070', radius=8000)  # location='47.606210, -122.332070', radius=8000
+    yelp_places = search_yelp(keyword='seafood', location='Seattle', limit=1)
 
     print('Google: \n', google_places[0])
     print('\nYelp: \n', yelp_places[0])
