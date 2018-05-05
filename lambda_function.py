@@ -12,6 +12,7 @@ from __future__ import print_function
 from utils.query_api import search_yelp
 import logging
 
+
 # --------------- Helpers that build all of the responses ----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
@@ -73,8 +74,60 @@ def handle_session_end_request():
         card_title, speech_output, None, should_end_session))
 
 
-def create_favorite_cuisine_attributes(favorite_cuisine):
-    return {"favorite_Cuisine": favorite_cuisine}
+def build_output(session_attributes, card_title, should_end_session):
+    """
+    Depending on the session_attributes to build the output response
+    :param session_attributes:
+    :param card_title:
+    :param should_end_session:
+    :return:
+    """
+    if 'restaurant' in session_attributes:
+        speech_output = "How about " + session_attributes['restaurant'] + " "
+    elif 'location' in session_attributes :
+        speech_output = "I now know your location is " + \
+                        session_attributes['location'] + \
+                        ". Which cuisine would you like? You can tell me your favorite food."
+    elif 'cuisine' in session_attributes:
+        speech_output = "I now know your favorite cuisine is " + \
+                        session_attributes['cuisine'] + \
+                        ". Where would you like me to look? You can tell me the 5 digit zipcode."
+    else:
+        speech_output = "I'm not sure what your favorite cuisine is. " \
+                        "Please try again."
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, speech_output, should_end_session))
+
+
+def update_cuisine_attributes(session_attributes, cuisine):
+    session_attributes['cuisine'] = cuisine
+    return session_attributes
+
+
+def update_location_attributes(session_attributes, location):
+    session_attributes["location"] = location
+    return session_attributes
+
+
+def update_restaurant_attributes(session_attributes, restaurant):
+    session_attributes["restaurant"] = restaurant
+    return session_attributes
+
+
+def get_cuisine(session):
+    if session.get('attributes', {}) and "cuisine" in session.get('attributes', {}):
+        cuisine = session['attributes']['cuisine']
+        return cuisine
+    else:
+        return None
+
+
+def get_location(session):
+    if session.get('attributes', {}) and "location" in session.get('attributes', {}):
+        location = session['attributes']['cuisine']
+        return location
+    else:
+        return None
 
 
 def set_cuisine(intent, session):
@@ -83,59 +136,71 @@ def set_cuisine(intent, session):
     """
 
     card_title = intent['name']
-    session_attributes = {}
+    session_attributes = session['attributes']
     should_end_session = False
+    cuisine = None
+    if 'food' in intent['slots']:
+        cuisine = intent['slots']['food']['value']
+        session_attributes = update_cuisine_attributes(session_attributes, cuisine)
 
-    if 'Cuisine' in intent['slots']:
-        favorite_cuisine = intent['slots']['Cuisine']['value']
-        session_attributes = create_favorite_cuisine_attributes(favorite_cuisine)
-        speech_output = "I now know your favorite cuisine is " + \
-                        favorite_cuisine + \
-                        ". Where would you like me to look? You can tell me the 5 digit zipcode."
-        reprompt_text = "Where would you like me to look? You can tell me the 5 digit zipcode."
-    else:
-        speech_output = "I'm not sure what your favorite cuisine is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite cuisine is. " 
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+    # check cuisine is set or not
+    location = get_location(session)
+    print(location, cuisine)
+    if location is not None and cuisine is not None:
+        places = search_yelp(keyword=cuisine, location=location, search_limit=1)
+        update_restaurant_attributes(session_attributes, places[0]['name'])
 
-def create_location_attributes(location):
-    return {"location": location}
+    return build_output(session_attributes, card_title, should_end_session)
+
+    #     speech_output = "I now know your favorite cuisine is " + \
+    #                     favorite_cuisine + \
+    #                     ". Where would you like me to look? You can tell me the 5 digit zipcode."
+    #     reprompt_text = "Where would you like me to look? You can tell me the 5 digit zipcode."
+    # else:
+    #     speech_output = "I'm not sure what your favorite cuisine is. " \
+    #                     "Please try again."
+    #     reprompt_text = "I'm not sure what your favorite cuisine is. "
+    # return build_response(session_attributes, build_speechlet_response(
+    #     card_title, speech_output, reprompt_text, should_end_session))
+
 
 def set_location(intent, session):
-    """ Sets the cuisine in the session and prepares the speech to reply to the
+    """ Sets the location in the session and prepares the speech to reply to the
     user.
     """
 
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
-    if 'Location' in intent['slots']:
-        location = intent['slots']['Location']['value']
-        cuisine = get_cuisine(intent, session)
-        session_attributes.update(create_location_attributes(location))
-        places = search_yelp(keyword=cuisine, location=location, search_limit=1)
+    location = None
+    print(intent)
+    if 'zip' in intent['slots'] and 'value' in intent['slots']['zip']:
+        location = intent['slots']['zip']['value']
+    if 'location' in intent['slots']and 'value' in intent['slots']['location']:
+        location = intent['slots']['location']['value']
 
-        speech_output = "I now know your location is " + location + " and your favorite food is " + cuisine + "."\
-                        " How about "+places[0]['name']+ "?"
-        reprompt_text = "I now know your location"
+    if location is not None:
+        update_location_attributes(session_attributes, location)
 
-    else:
-        speech_output = "I'm not sure what your favorite cuisine is. " \
-                        "Please try again."
-        reprompt_text = "I'm not sure what your favorite cuisine is. " 
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
+        # check cuisine is set or not
+        cuisine = get_cuisine(session)
+        if cuisine is not None:
+            places = search_yelp(keyword=cuisine, location=location, search_limit=1)
+            update_restaurant_attributes(session_attributes, places)
 
+    return build_output(session_attributes, card_title, should_end_session)
 
-def get_cuisine(intent, session):
-    session_attributes = {}
-    reprompt_text = None
+    #     speech_output = "I now know your location is " + location + " and your favorite food is " + cuisine + "."\
+    #                     " How about "+places[0]['name']+ "?"
+    #     reprompt_text = "I now know your location"
+    #
+    # else:
+    #     speech_output = "I'm not sure what your favorite cuisine is. " \
+    #                     "Please try again."
+    #     reprompt_text = "I'm not sure what your favorite cuisine is. "
+    # return build_response(session_attributes, build_speechlet_response(
+    #     card_title, speech_output, reprompt_text, should_end_session))
 
-    if session.get('attributes', {}) and "favorite_Cuisine" in session.get('attributes', {}):
-        favorite_Cuisine = session['attributes']['favorite_Cuisine']
-        return favorite_Cuisine
 
 
 def get_cuisine_from_session(intent, session):
@@ -160,6 +225,14 @@ def get_cuisine_from_session(intent, session):
 
 
 # --------------- Events ------------------
+# intent handler register
+# adding your intent handler function name to her when you want to add your new intent
+intent_handler = {
+    'RequestRecommendation': set_cuisine,
+    'SetConstraint': set_location
+}
+
+
 
 def on_session_started(session_started_request, session):
     """ Called when the session starts """
@@ -179,28 +252,6 @@ def on_launch(launch_request, session):
     return get_welcome_response()
 
 
-def on_intent(intent_request, session):
-    """ Called when the user specifies an intent for this skill """
-
-    print("on_intent requestId=" + intent_request['requestId'] +
-          ", sessionId=" + session['sessionId'])
-
-    intent = intent_request['intent']
-    intent_name = intent_request['intent']['name']
-
-    # Dispatch to your skill's intent handlers
-    if intent_name == "MyCusineIsIntent":
-        return set_cuisine(intent, session)
-    elif intent_name == "MyLocationIsIntent":
-        return set_location(intent, session)
-    elif intent_name == "AMAZON.HelpIntent":
-        return get_welcome_response()
-    elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
-        return handle_session_end_request()
-    else:
-        raise ValueError("Invalid intent")
-
-
 def on_session_ended(session_ended_request, session):
     """ Called when the user ends the session.
 
@@ -209,6 +260,45 @@ def on_session_ended(session_ended_request, session):
     print("on_session_ended requestId=" + session_ended_request['requestId'] +
           ", sessionId=" + session['sessionId'])
     # add cleanup logic here
+
+
+def state_manager(intent, session):
+    """
+    Add the state change logic here
+    will add more logics here
+    :param intent:
+    :param session:
+    :return:
+    """
+    if 'attributes' not in session:
+        session['attributes'] = {}
+    session['attributes']['state'] = intent['name']
+    return intent_handler[intent['name']](intent, session)
+
+
+def on_intent(intent_request, session):
+    """ Called when the user specifies an intent for this skill """
+    """ State Control Manager """
+
+    print("on_intent requestId=" + intent_request['requestId'] +
+          ", sessionId=" + session['sessionId'])
+
+    intent = intent_request['intent']
+    intent_name = intent_request['intent']['name']
+    print(intent_name)
+    # Dispatch to your skill's intent handlers
+    if intent_name in intent_handler:
+        # for the registered and our defined intent
+        return state_manager(intent, session)
+    elif intent_name == "AMAZON.HelpIntent":
+        return get_welcome_response()
+    elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
+        return handle_session_end_request()
+    else:
+        raise ValueError("Invalid intent")
+
+
+
 
 
 # --------------- Main handler ------------------

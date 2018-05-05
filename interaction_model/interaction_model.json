@@ -1,0 +1,135 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "mos eisley cantina",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "RequestRecommendation",
+                    "slots": [
+                        {
+                            "name": "food",
+                            "type": "AMAZON.Food"
+                        },
+                        {
+                            "name": "RequestRecPrefix",
+                            "type": "RequestRecPrefix"
+                        }
+                    ],
+                    "samples": [
+                        "{RequestRecPrefix} {food}",
+                        "I'd like to eat {food}",
+                        "do you know any {food} restaurant ",
+                        "{food}",
+                        "{food} food",
+                        "{food} place",
+                        "a {food} restaurant"
+                    ]
+                },
+                {
+                    "name": "SetConstraint",
+                    "slots": [
+                        {
+                            "name": "zip",
+                            "type": "AMAZON.NUMBER"
+                        },
+                        {
+                            "name": "location",
+                            "type": "AMAZON.AT_REGION"
+                        }
+                    ],
+                    "samples": [
+                        "near {location}",
+                        "in {location}",
+                        "near {zip}",
+                        "{zip}",
+                        "in {zip}"
+                    ]
+                },
+                {
+                    "name": "ConverseIntent",
+                    "slots": [],
+                    "samples": []
+                },
+                {
+                    "name": "RequestMoreData",
+                    "slots": [],
+                    "samples": []
+                },
+                {
+                    "name": "ChangeRecommendation",
+                    "slots": [],
+                    "samples": []
+                },
+                {
+                    "name": "ChangeConstraint",
+                    "slots": [],
+                    "samples": []
+                },
+                {
+                    "name": "GiveFeedback",
+                    "slots": [],
+                    "samples": []
+                }
+            ],
+            "types": [
+                {
+                    "name": "RequestRecPrefix",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "I want"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "can you tell me about"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "find me"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "find me some"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "I'd like"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "tell me about"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "how about "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "I would like"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
