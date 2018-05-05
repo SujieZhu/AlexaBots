@@ -24,6 +24,8 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
         'shouldEndSession': should_end_session
     }
 
+# RequestRecommendation
+#restaurant
 
 def build_response(session_attributes, speechlet_response):
     return {
@@ -66,8 +68,7 @@ def handle_session_end_request():
 def create_favorite_cuisine_attributes(favorite_cuisine):
     return {"favorite_Cuisine": favorite_cuisine}
 
-
-def set_constraint(intent, session):
+def request_recommendation(intent, session):
     """ Sets the cuisine in the session and prepares the speech to reply to the
     user.
     """
@@ -96,7 +97,37 @@ def set_constraint(intent, session):
     else:
         speech_output = "I'm not sure what your favorite cuisine is. " \
                         "Please try again."
-        reprompt_text = "I'm not sure what your favorite cuisine is. " 
+        reprompt_text = "I'm not sure what your favorite cuisine is. "
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
+def set_constraint(intent, session):
+    """ Sets the cuisine in the session and prepares the speech to reply to the
+    user.
+    """
+
+    card_title = intent['name']
+    session_attributes = {}
+    should_end_session = False
+
+    if 'food' in intent['slots']:
+        favorite_cuisine = intent['slots']['food']['value']
+        session_attributes = create_favorite_cuisine_attributes(favorite_cuisine)
+        speech_output = "I now know your favorite cuisine is " + \
+                    favorite_cuisine + \
+                    ". Where would you like me to look? You can tell me the 5 digit zipcode."
+        reprompt_text = "Where would you like me to look? You can tell me the 5 digit zipcode."
+    elif 'zip' in intent['slots']:
+        loc_zip = intent['slots']['zip']['value']
+        cuisine = get_cuisine(intent, session)
+        session_attributes.update(create_location_attributes(loc_zip))
+        speech_output = "I now know your location is " + loc_zip + " and your favorite food is " + cuisine + ". We will offer you recommendation later"
+        reprompt_text = "I now know your location"
+    else:
+        speech_output = "I'm confused about something. Good luck darling!"
+        reprompt_text = "I'm not sure what constraint you're trying to set. You can try again if you have the patience."
+
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
