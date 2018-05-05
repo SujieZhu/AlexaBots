@@ -1,4 +1,4 @@
-import requests
+from botocore.vendored import requests
 
 # API Keys (linked to my personal google and yelp accounts)
 # Maximum number of queries per day: 5000
@@ -55,8 +55,9 @@ def get_google_detail(api_key, placeid):
     detail = request(GOOGLE_DETAIL_PATH, api_key, url_params=url_params)
     return detail['result']
 
+
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(api_key, keyword, location, limit=1):
+def search_yelp(keyword, location, api_key = YELP_KEY, limit=1):
     """Query the YELP Search API by a search term and location.
 
     Args:
