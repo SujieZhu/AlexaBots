@@ -85,24 +85,19 @@ def build_output(session_attributes, card_title, should_end_session):
     print(session_attributes)
     if 'SetConstraint' == session_attributes['state']:
         lack = check_constraints(session_attributes)
+        # check info is sufficient or not
         if len(lack) == 0:
+            # if constraints is sufficient, provide restaurant
             return offer_recommendation(session_attributes, card_title, should_end_session)
         else:
+            # if not sufficient, ask user to provide other info
             return prompt_constraint(session_attributes, lack, card_title, should_end_session)
+
+    if 'ChangeRecommendation' == session_attributes['state']:
+        return offer_recommendation(session_attributes, card_title, should_end_session)
 
     if 'restaurant' in session_attributes:
         speech_output = "How about " + session_attributes['restaurant'] + " "
-    elif 'location' in session_attributes :
-        speech_output = "I now know your location is " + \
-                        session_attributes['location'] + \
-                        ". Which cuisine would you like? You can tell me your favorite food."
-    elif 'cuisine' in session_attributes:
-        speech_output = "I now know your favorite cuisine is " + \
-                        session_attributes['cuisine'] + \
-                        ". Where would you like me to look? You can tell me the 5 digit zipcode."
-    else:
-        speech_output = "I'm not sure what your favorite cuisine is. " \
-                        "Please try again."
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_output, should_end_session))
 
@@ -175,7 +170,10 @@ def search_with_parameter(session_attributes, rank = 0):
     cuisine = session_attributes['food']
     location = session_attributes['location']
     places = search_yelp(keyword=cuisine, location=location, limit=rank+1)
-    update_restaurant_attributes(session_attributes, places[rank]['name'])
+    print(places)
+    name = places[len(places)-1]['name']
+    print(name)
+    update_restaurant_attributes(session_attributes, name)
     update_rank_attributes(session_attributes, rank)
 
 
@@ -273,7 +271,9 @@ def request_data(intent, session):
 
 def change_recommendation(intent, session):
     """
-    chaneg recommendation by the user
+    change recommendation by the user
+    TODO: relative index instead of the random one
+    TODO: how to provide a list of restaurant for the user to choose? so that user could say fifth one?
     :param intent:
     :param session:
     :return:
@@ -281,7 +281,21 @@ def change_recommendation(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
-    return
+
+    rank = session_attributes['rank']
+    if 'next' in intent['slots'] and 'value' in intent['slots']['next']:
+        rank = rank + 1
+    if 'sequence' in intent['slots']and 'value' in intent['slots']['sequence']:
+        if intent['slots']['sequence']['value'] == 'previous' and rank > 0:
+            rank = rank - 1
+        else:
+            # now only support the next and previous one
+            rank = rank + 1
+
+    # search with the new rank, it will update the restaurant name and the rank number
+    search_with_parameter(session_attributes, rank)
+
+    return build_output(session_attributes, card_title, should_end_session)
 
 
 def change_constraint(intent, session):
@@ -295,6 +309,31 @@ def change_constraint(intent, session):
     session_attributes = session['attributes']
     should_end_session = False
     return
+
+
+def unsolved_output(intent, session):
+    """
+    For unsolved state or input, prompt all the current attributes
+    TODO: add more reprompt according to the previous state info
+    :param intent:
+    :param session:
+    :return:
+    """
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+    speech_output = ""
+    if 'location' in session_attributes:
+        speech_output += "I now know your location is " + \
+                        session_attributes['location'] + ". "
+    if 'cuisine' in session_attributes:
+        speech_output += "I now know your favorite cuisine is " + \
+                        session_attributes['cuisine'] + ". "
+    else:
+        speech_output = "I'm not sure what your favorite cuisine is. " \
+                        "Please try again."
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, speech_output, should_end_session))
 
 
 def set_cuisine(intent, session):
@@ -356,6 +395,7 @@ intent_handler = {
     'RequestMoreData': request_data,
     'ChangeRecommendation': change_recommendation,
     'ChangeConstraint': change_constraint,
+    'Unsolved': unsolved_output,
 }
 
 # global variables for the constraints
@@ -367,8 +407,8 @@ require_constraints = ['food', 'location']
 
 previous_state = {
     'SetConstraint': {'initial', 'SetConstraint'},
-    'RequestMoreData': {'SetConstraint'},
-    'ChangeRecommendation': {'SetConstraint', 'RequestMoreData'},
+    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation'},
+    'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
 }
 
@@ -432,7 +472,7 @@ def state_manager(intent, session):
     else:
         # not update the current state, roll back to the previous state
         session['attributes']['state'] = session['attributes']['previous_state']
-        return get_welcome_response()
+        return intent_handler['Unsolved'](intent, session)
 
 def on_intent(intent_request, session):
     """ Called when the user specifies an intent for this skill """
