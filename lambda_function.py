@@ -10,6 +10,7 @@ from __future__ import print_function
 
 from utils.query_api import search_yelp
 import logging
+import random
 
 
 # --------------- Helpers that build all of the responses ----------------------
@@ -65,7 +66,7 @@ def get_welcome_response():
 
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Alexa Skills Kit sample. " \
+    speech_output = "Thank you for trying the Mos eisley cantina. " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -81,6 +82,14 @@ def build_output(session_attributes, card_title, should_end_session):
     :param should_end_session:
     :return:
     """
+    print(session_attributes)
+    if 'SetConstraint' == session_attributes['state']:
+        lack = check_constraints(session_attributes)
+        if len(lack) == 0:
+            return offer_recommendation(session_attributes, card_title, should_end_session)
+        else:
+            return prompt_constraint(session_attributes, lack, card_title, should_end_session)
+
     if 'restaurant' in session_attributes:
         speech_output = "How about " + session_attributes['restaurant'] + " "
     elif 'location' in session_attributes :
@@ -98,8 +107,85 @@ def build_output(session_attributes, card_title, should_end_session):
         card_title, speech_output, speech_output, should_end_session))
 
 
+def prompt_constraint(session_attributes, lack, card_title, should_end_session):
+    """
+    randomly pick one un-provided constraint to the user
+    TODO: Add more random response sentence
+    :param session_attributes:
+    :param lack:
+    :param card_title:
+    :param should_end_session:
+    :return:
+    """
+    reprompt = {
+        'location': "Where would you like me to look? You can tell me the 5 digit zipcode or your address.",
+        'food': "Which cuisine would you like? You can tell me your favorite food."
+    }
+
+    key = random.randint(0, len(lack)-1)
+    speech_output = reprompt[lack[key]]
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, speech_output, should_end_session))
+
+
+def offer_recommendation(session_attributes, card_title, should_end_session):
+    """
+    The output speech for offer restaurants
+    TODO: Add more random response with restaurant name
+    :param session_attributes:
+    :param card_title:
+    :param should_end_session:
+    :return:
+    """
+    name = session_attributes['restaurant']
+    speech_output = "How about " + name + " ?"
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, speech_output, should_end_session))
+
+
+def check_constraints(session_attributes):
+    """
+    check the constraints' sufficiency to call yelp API
+    if the constraints is sufficiency, call yelp to generate the restaurant
+    if not sufficient, produce the constraints list for the output
+    :param session_attributes:
+    :return:
+    """
+    lack = []
+    parameters = {}
+    for key in require_constraints:
+        if key in session_attributes:
+            parameters[key] = session_attributes[key]
+        else:
+            lack.append(key)
+    if len(lack) == 0:
+        search_with_parameter(session_attributes)
+    return lack
+
+
+def search_with_parameter(session_attributes, rank = 0):
+    """
+    call the Yelp API with the parameter dict
+    TODO: add more parameter mapping to call YELP API(add more search constraints)
+    TODO: not hard-coded
+    :param session_attributes:
+    :param parameters: parameter dict
+    :return:
+    """
+    cuisine = session_attributes['food']
+    location = session_attributes['location']
+    places = search_yelp(keyword=cuisine, location=location, limit=rank+1)
+    update_restaurant_attributes(session_attributes, places[rank]['name'])
+    update_rank_attributes(session_attributes, rank)
+
+
 def update_cuisine_attributes(session_attributes, cuisine):
-    session_attributes['cuisine'] = cuisine
+    session_attributes['food'] = cuisine
+    return session_attributes
+
+
+def update_rank_attributes(session_attributes, rank):
+    session_attributes['rank'] = rank
     return session_attributes
 
 
@@ -114,8 +200,8 @@ def update_restaurant_attributes(session_attributes, restaurant):
 
 
 def get_cuisine(session):
-    if session.get('attributes', {}) and "cuisine" in session.get('attributes', {}):
-        cuisine = session['attributes']['cuisine']
+    if session.get('attributes', {}) and "food" in session.get('attributes', {}):
+        cuisine = session['attributes']['food']
         return cuisine
     else:
         return None
@@ -123,10 +209,92 @@ def get_cuisine(session):
 
 def get_location(session):
     if session.get('attributes', {}) and "location" in session.get('attributes', {}):
-        location = session['attributes']['cuisine']
+        location = session['attributes']['location']
         return location
     else:
         return None
+
+
+def get_value_from_intent(intent, name):
+    if name in intent['slots'] and 'value' in intent['slots'][name]:
+        return intent['slots'][name]['value']
+    else:
+        return None
+
+
+def update_session_attribute(session_attributes, key, value):
+    """
+    Update one attribute of session
+    Can check the None value
+    :param session_attributes:
+    :param key:
+    :param value:
+    :return:
+    """
+    if value is None:
+        return
+    else:
+        if key == 'zip':
+            key = 'location'
+        session_attributes[key] = value
+        return
+
+
+def set_constraint(intent, session):
+    """
+    Set the constraints of the search
+    :param intent:
+    :param session:
+    :return:
+    """
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+
+    for key in constrains:
+        value = get_value_from_intent(intent, key)
+        update_session_attribute(session_attributes, key, value)
+
+    return build_output(session_attributes, card_title, should_end_session)
+
+
+def request_data(intent, session):
+    """
+    request data by the user
+    :param intent:
+    :param session:
+    :return:
+    """
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+    return
+
+
+def change_recommendation(intent, session):
+    """
+    chaneg recommendation by the user
+    :param intent:
+    :param session:
+    :return:
+    """
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+    return
+
+
+def change_constraint(intent, session):
+    """
+    chaneg constraint by the user
+    :param intent:
+    :param session:
+    :return:
+    """
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+    return
 
 
 def set_cuisine(intent, session):
@@ -179,14 +347,44 @@ def set_location(intent, session):
     return build_output(session_attributes, card_title, should_end_session)
 
 
+
 # --------------- Events ------------------
 # intent handler register
 # adding your intent handler function name to her when you want to add your new intent
 intent_handler = {
-    'RequestRecommendation': set_cuisine,
-    'SetConstraint': set_location
+    'SetConstraint': set_constraint,
+    'RequestMoreData': request_data,
+    'ChangeRecommendation': change_recommendation,
+    'ChangeConstraint': change_constraint,
 }
 
+# global variables for the constraints
+constrains = ['food', 'location', 'zip', 'now']
+# global variables for the required constraints used in prompt_constraint function
+# will add more in the future
+require_constraints = ['food', 'location']
+
+
+previous_state = {
+    'SetConstraint': {'initial', 'SetConstraint'},
+    'RequestMoreData': {'SetConstraint'},
+    'ChangeRecommendation': {'SetConstraint', 'RequestMoreData'},
+    'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
+}
+
+
+def check_previous_state(session):
+    """
+    check the
+    :param session:
+    :return: boolean
+    """
+    previous = session['attributes']['previous_state']
+    current = session['attributes']['state']
+    if previous in previous_state[current]:
+        return True
+    else:
+        return False
 
 
 def on_session_started(session_started_request, session):
@@ -226,9 +424,15 @@ def state_manager(intent, session):
     """
     if 'attributes' not in session:
         session['attributes'] = {}
+        session['attributes']['state'] = 'initial'
+    session['attributes']['previous_state'] = session['attributes']['state']
     session['attributes']['state'] = intent['name']
-    return intent_handler[intent['name']](intent, session)
-
+    if check_previous_state(session):
+        return intent_handler[intent['name']](intent, session)
+    else:
+        # not update the current state, roll back to the previous state
+        session['attributes']['state'] = session['attributes']['previous_state']
+        return get_welcome_response()
 
 def on_intent(intent_request, session):
     """ Called when the user specifies an intent for this skill """
