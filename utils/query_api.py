@@ -38,14 +38,14 @@ def search_google(keyword, location='', radius=8000, types=['restaurant',], limi
         'key': api_key
     }
     if location != '':
-        url_params['location']=location.replace(' ', '+')
+        url_params['location'] = location.replace(' ', '+')
         url_params['radius'] = radius
 
     g_places = request(GOOGLE_TEXTSEARCH_PATH, api_key, url_params=url_params)
     places = g_places['results'][:limit]
-    for i in range(len(places)):
-        detail = get_google_detail(places[i]['place_id'])
-        places[i]['detail'] = detail
+    # for i in range(len(places)):
+    #     detail = get_google_detail(places[i]['place_id'])
+    #     places[i]['detail'] = detail
     return places
 
 
@@ -97,22 +97,31 @@ def get_google_direction(travelmode, origin, destination, use_id=False, api_key=
 
 
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(keyword, location, limit=1, api_key=YELP_KEY):
+def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True, radius=8000):
     """Query the YELP Search API by a search term and location.
 
     Args:
         term (str): The search term passed to the API.
         location (str): The search location passed to the API.
-
+        open_at (int): The time-value passed to the API. Cannot be set in conjunction with open_now; if it is, function defaults to open_now.
+        open_now (bool): The bool val passed to the API. Cannot be set in conjunction with open_at; if it is, function defaults to open_now.
     Returns:
         dict: The JSON response from the request.
     """
 
+    try: assert not(open_at and open_now)
+    except: open_at = None; open_now = True
+
+
     url_params = {
         'term': keyword.replace(' ', '+'),
         'location': location.replace(' ', '+'),
-        'limit': limit
+        'limit': limit,
+        'radius': radius
     }
+
+    if open_now: url_params['open_now'] = True
+    elif open_at: url_params['open_at'] = open_at
 
     places = request(YELP_SEARCH_PATH, api_key, url_params=url_params)
     return places['businesses']
@@ -183,10 +192,9 @@ def request(path, api_key, url_params=None):
 
 if __name__ == '__main__':
     google_places = search_google(keyword='Seattle seafood', location='47.606210, -122.332070', radius='8000')  # location='47.606210, -122.332070', radius=8000
-    # yelp_places = search_yelp(keyword='seafood', location='Seattle', limit=1)
+    yelp_places = search_yelp(keyword='seafood', location='Seattle', limit=1, radius=5000)
     direction = get_google_direction('driving', 'Seattle', 'Portland')
 
     print('Direction: \n', direction)
-
-    # print('Google: \n', google_places[0])
-    # print('\nYelp: \n', yelp_places[0])
+    print('Google: \n', google_places[0])
+    print('\nYelp: \n', yelp_places[0])

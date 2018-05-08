@@ -25,5 +25,11 @@ This repository has two main (protected) branches:
 
 * `master` - Contains released (i.e. submitted) commits. No commits should be made to this branch between submissions. Instead, the develop branch should be merged into master when the repository is ready for release and submission, i.e. when all work for a deliverable is complete. This can be done manually or with git flow release (see below).
 
+## Machine Learning Model
+This part aims at building a more robust and smart chatbot, and we are going to explore it after finishing the rule-based system.
+### Dataset
+* [DSTC2 & 3](http://camdial.org/~mh521/dstc/), University of Cambridge
+* [bAbi](https://research.fb.com/downloads/babi/), Facebook
 
+### Dialog Policy Module
 
