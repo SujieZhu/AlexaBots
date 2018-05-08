@@ -57,22 +57,30 @@ def get_google_detail(placeid, api_key=GOOGLE_KEY):
 
 
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(keyword, location, limit=1, api_key=YELP_KEY):
+def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True):
     """Query the YELP Search API by a search term and location.
 
     Args:
         term (str): The search term passed to the API.
         location (str): The search location passed to the API.
-
+        open_at (int): The time-value passed to the API. Cannot be set in conjunction with open_now; if it is, function defaults to open_now.
+        open_now (bool): The bool val passed to the API. Cannot be set in conjunction with open_at; if it is, function defaults to open_now.
     Returns:
         dict: The JSON response from the request.
     """
+
+    try: assert not(open_at and open_now)
+    except: open_at = None; open_now = True
+
 
     url_params = {
         'term': keyword.replace(' ', '+'),
         'location': location.replace(' ', '+'),
         'limit': limit
     }
+
+    if open_now: url_params['open_now'] = True
+    elif open_at: url_params['open_at'] = open_at
 
     places = request(YELP_SEARCH_PATH, api_key, url_params=url_params)
     return places['businesses']
