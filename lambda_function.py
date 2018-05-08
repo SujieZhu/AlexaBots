@@ -6,8 +6,6 @@ For additional samples, visit the Alexa Skills Kit Getting Started guide at
 http://amzn.to/1LGWsLG
 """
 
-from __future__ import print_function
-
 from utils.query_api import search_yelp
 import logging
 import random
@@ -249,7 +247,7 @@ def set_constraint(intent, session):
     session_attributes = session['attributes']
     should_end_session = False
 
-    for key in constrains:
+    for key in constraints:
         value = get_value_from_intent(intent, key)
         update_session_attribute(session_attributes, key, value)
 
@@ -259,6 +257,7 @@ def set_constraint(intent, session):
 def request_data(intent, session):
     """
     request data by the user
+    TODO: add request data from the new Yelp api
     :param intent:
     :param session:
     :return:
@@ -301,6 +300,7 @@ def change_recommendation(intent, session):
 def change_constraint(intent, session):
     """
     chaneg constraint by the user
+    TODO: change constraints
     :param intent:
     :param session:
     :return:
@@ -399,7 +399,7 @@ intent_handler = {
 }
 
 # global variables for the constraints
-constrains = ['food', 'location', 'zip', 'now']
+constraints = ['food', 'location', 'zip', 'now']
 # global variables for the required constraints used in prompt_constraint function
 # will add more in the future
 require_constraints = ['food', 'location']
@@ -473,6 +473,7 @@ def state_manager(intent, session):
         # not update the current state, roll back to the previous state
         session['attributes']['state'] = session['attributes']['previous_state']
         return intent_handler['Unsolved'](intent, session)
+
 
 def on_intent(intent_request, session):
     """ Called when the user specifies an intent for this skill """
