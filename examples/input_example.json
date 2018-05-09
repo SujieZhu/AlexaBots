@@ -1,0 +1,87 @@
+{
+    "version": "1.0",
+    "session": {
+        "new": false,
+        "sessionId": "amzn1.echo-api.session.d7cb0ffa-2218-4f55-aca7-4027cca1c044",
+        "application": {
+            "applicationId": "amzn1.ask.skill.7c773f50-c909-4dc1-9e20-e3c4143d676b"
+        },
+        "attributes": {
+            "previous_state": "initial",
+            "state": "SetConstraint",
+            "food": "fast food"
+        },
+        "user": {
+            "userId": "amzn1.ask.account.AGRIIXR3YO6VVT7QIZENN5FMZK47Y44NKN5UB4YWIZ3JMPBSBVL7GYI7QZRUX7CPOFM3VT4POYJ5TVM4GA3QFL7XPS2YJSOCT2BKAGP6QT7ZVMJUMSNOTKOBBGYCK2OJCDVTZW32WO4CVYWO2SHZYQBAST3TZZQOBQJLUZFG23U6IFYHFZBK4JDGOTHMJMDMHRZ2QLTGZH3SXSA"
+        }
+    },
+    "context": {
+        "AudioPlayer": {
+            "playerActivity": "IDLE"
+        },
+        "Display": {
+            "token": ""
+        },
+        "System": {
+            "application": {
+                "applicationId": "amzn1.ask.skill.7c773f50-c909-4dc1-9e20-e3c4143d676b"
+            },
+            "user": {
+                "userId": "amzn1.ask.account.AGRIIXR3YO6VVT7QIZENN5FMZK47Y44NKN5UB4YWIZ3JMPBSBVL7GYI7QZRUX7CPOFM3VT4POYJ5TVM4GA3QFL7XPS2YJSOCT2BKAGP6QT7ZVMJUMSNOTKOBBGYCK2OJCDVTZW32WO4CVYWO2SHZYQBAST3TZZQOBQJLUZFG23U6IFYHFZBK4JDGOTHMJMDMHRZ2QLTGZH3SXSA"
+            },
+            "device": {
+                "deviceId": "amzn1.ask.device.AEPXOA724HCHPILMPN2DYPUKYFMW2FZDGLVNJIMT2AVJ5ATG3HUAJS2OT7RHJVGCO65FMNTFQE3Y7BGVREUN3PS7AJMLOUEP64CJOUQUZS3QFLFJ42ZZSK5GCQ6XT6WCPJPL6PQAYMB2VANS5IXWG4QSCX3A",
+                "supportedInterfaces": {
+                    "AudioPlayer": {},
+                    "Display": {
+                        "templateVersion": "1.0",
+                        "markupVersion": "1.0"
+                    }
+                }
+            },
+            "apiEndpoint": "https://api.amazonalexa.com",
+            "apiAccessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjEifQ.eyJhdWQiOiJodHRwczovL2FwaS5hbWF6b25hbGV4YS5jb20iLCJpc3MiOiJBbGV4YVNraWxsS2l0Iiwic3ViIjoiYW16bjEuYXNrLnNraWxsLjdjNzczZjUwLWM5MDktNGRjMS05ZTIwLWUzYzQxNDNkNjc2YiIsImV4cCI6MTUyNTgyOTM3MSwiaWF0IjoxNTI1ODI1NzcxLCJuYmYiOjE1MjU4MjU3NzEsInByaXZhdGVDbGFpbXMiOnsiY29uc2VudFRva2VuIjpudWxsLCJkZXZpY2VJZCI6ImFtem4xLmFzay5kZXZpY2UuQUVQWE9BNzI0SENIUElMTVBOMkRZUFVLWUZNVzJGWkRHTFZOSklNVDJBVko1QVRHM0hVQUpTMk9UN1JISlZHQ082NUZNTlRGUUUzWTdCR1ZSRVVOM1BTN0FKTUxPVUVQNjRDSk9VUVVaUzNRRkxGSjQyWlpTSzVHQ1E2WFQ2V0NQSlBMNlBRQVlNQjJWQU5TNUlYV0c0UVNDWDNBIiwidXNlcklkIjoiYW16bjEuYXNrLmFjY291bnQuQUdSSUlYUjNZTzZWVlQ3UUlaRU5ONUZNWks0N1k0NE5LTjVVQjRZV0laM0pNUEJTQlZMN0dZSTdRWlJVWDdDUE9GTTNWVDRQT1lKNVRWTTRHQTNRRkw3WFBTMllKU09DVDJCS0FHUDZRVDdaVk1KVU1TTk9US09CQkdZQ0syT0pDRFZUWlczMldPNENWWVdPMlNIWllRQkFTVDNUWlpRT0JRSkxVWkZHMjNVNklGWUhGWkJLNEpER09USE1KTURNSFJaMlFMVEdaSDNTWFNBIn19.j9XYQC-PtfzI_9YOTRz0BpsMydBBW0NDUzWvvmqi5fissKy0wr5fqh_SijAjudEs6Er8jaqk71rQWJf_v9V_bdxZlT5dAbTLYqB6lhWRZEzqJi5AJoLBdotBjzJ8L8pGf_S35hLBdS2kHDq4vy2BLuLKhcr27HSnqZhGt73iRFs6QXUA24rQByW6eSaUxRqsmg-_hfLxRG3NXIZlcp813Qup17-cCOsGG4vGDv-N2oxKEtyQwhssYRs34d1rD1BasmllXv3-pKXn8iiCxQN8o0FS5hNDi9qO9ZBDxL4zIIK9iTeXgvGIZ_e7zMJpU0izKcI8TgA8vFqM57MikSYkOA"
+        }
+    },
+    "request": {
+        "type": "IntentRequest",
+        "requestId": "amzn1.echo-api.request.122f759a-d4ce-4601-bcae-5579df252a48",
+        "timestamp": "2018-05-09T00:29:31Z",
+        "locale": "en-US",
+        "intent": {
+            "name": "SetConstraint",
+            "confirmationStatus": "NONE",
+            "slots": {
+                "zip": {
+                    "name": "zip",
+                    "confirmationStatus": "NONE"
+                },
+                "RequestRecPrefix": {
+                    "name": "RequestRecPrefix",
+                    "confirmationStatus": "NONE"
+                },
+                "proximity": {
+                    "name": "proximity",
+                    "confirmationStatus": "NONE"
+                },
+                "restaurant": {
+                    "name": "restaurant",
+                    "confirmationStatus": "NONE"
+                },
+                "now": {
+                    "name": "now",
+                    "confirmationStatus": "NONE"
+                },
+                "location": {
+                    "name": "location",
+                    "value": "uw",
+                    "confirmationStatus": "NONE"
+                },
+                "food": {
+                    "name": "food",
+                    "confirmationStatus": "NONE"
+                }
+            }
+        }
+    }
+}

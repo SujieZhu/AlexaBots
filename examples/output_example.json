@@ -1,0 +1,31 @@
+{
+    "body": {
+        "version": "1.0",
+        "response": {
+            "outputSpeech": {
+                "type": "PlainText",
+                "text": "How about Sonic Drive-In ?"
+            },
+            "card": {
+                "type": "Simple",
+                "title": "SessionSpeechlet - SetConstraint",
+                "content": "SessionSpeechlet - How about Sonic Drive-In ?"
+            },
+            "reprompt": {
+                "outputSpeech": {
+                    "type": "PlainText",
+                    "text": "How about Sonic Drive-In ?"
+                }
+            },
+            "shouldEndSession": false
+        },
+        "sessionAttributes": {
+            "previous_state": "SetConstraint",
+            "restaurant": "Sonic Drive-In",
+            "rank": 0,
+            "location": "uw",
+            "state": "SetConstraint",
+            "food": "fast food"
+        }
+    }
+}
