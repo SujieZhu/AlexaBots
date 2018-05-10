@@ -11,14 +11,13 @@ GOOGLE_TEXTSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/textsearch/
 GOOGLE_DETAIL_PATH = 'https://maps.googleapis.com/maps/api/place/details/json'
 
 YELP_SEARCH_PATH = 'https://api.yelp.com/v3/businesses/search'
-YELP_BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
+YELP_BUSINESS_PATH = 'https://api.yelp.com/v3/businesses/'  # Business ID will come after slash.
 
 
 # --------------------------------- GOOGLE ---------------------------------- #
 def search_google(keyword, location='', radius=8000, types=['restaurant',], limit=1, api_key=GOOGLE_KEY):
     """Query the Google Search API by a search keyword and location
        (through https GET request, you don't need to install googleplaces package).
-
             Args:
                 api_key
                 keyword
@@ -26,7 +25,6 @@ def search_google(keyword, location='', radius=8000, types=['restaurant',], limi
                 radius
                 types
                 limit
-
             Returns:
                 places: The JSON response from the request.
     """
@@ -57,22 +55,29 @@ def get_google_detail(placeid, api_key=GOOGLE_KEY):
 
 
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(keyword, location, limit=1, api_key=YELP_KEY):
+def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True):
     """Query the YELP Search API by a search term and location.
-
     Args:
         term (str): The search term passed to the API.
         location (str): The search location passed to the API.
-
+        open_at (int): The time-value passed to the API. Cannot be set in conjunction with open_now; if it is, function defaults to open_now.
+        open_now (bool): The bool val passed to the API. Cannot be set in conjunction with open_at; if it is, function defaults to open_now.
     Returns:
         dict: The JSON response from the request.
     """
+
+    try: assert not(open_at and open_now)
+    except: open_at = None; open_now = None
+
 
     url_params = {
         'term': keyword.replace(' ', '+'),
         'location': location.replace(' ', '+'),
         'limit': limit
     }
+
+    if open_now: url_params['open_now'] = True
+    elif open_at: url_params['open_at'] = open_at
 
     places = request(YELP_SEARCH_PATH, api_key, url_params=url_params)
     return places['businesses']
@@ -104,10 +109,8 @@ def search_yelp(keyword, location, limit=1, api_key=YELP_KEY):
 
 def search_yelp_business(business_id, api_key=YELP_KEY):
     """Query the YELP Business API by a business ID.
-
     Args:
         business_id (str): The ID of the business to query.
-
     Returns:
         dict: The JSON response from the request.
     """
@@ -119,16 +122,13 @@ def search_yelp_business(business_id, api_key=YELP_KEY):
 # --------------------------------- URL wrapper ---------------------------------- #
 def request(path, api_key, url_params=None):
     """Given your GOOGLE/YELP API_KEY, send a GET request to the API.
-
     Args:
         host (str): The domain host of the API.
         path (str): The path of the API after the domain.
         API_KEY (str): Your API Key.
         url_params (dict): An optional set of query parameters in the request.
-
     Returns:
         dict: The JSON response from the request.
-
     Raises:
         HTTPError: An error occurs from the HTTP request.
     """
@@ -144,7 +144,10 @@ def request(path, api_key, url_params=None):
 
 if __name__ == '__main__':
     google_places = search_google(keyword='Seattle seafood', location='47.606210, -122.332070', radius=8000)  # location='47.606210, -122.332070', radius=8000
-    yelp_places = search_yelp(keyword='seafood', location='Seattle', limit=1)
+    yelp_places = search_yelp(keyword='Chinese', location='Seattle', limit=1)
 
     print('Google: \n', google_places[0])
     print('\nYelp: \n', yelp_places[0])
+    
+    yelp_places = search_yelp_business('NCDpIDp2f-DhPO5sL5Hbdw')
+    print('\nYelp: \n', yelp_places)
