@@ -1,15 +1,10 @@
 """
-This sample demonstrates a simple skill built with the Amazon Alexa Skills Kit.
-The Intent Schema, Custom Slots, and Sample Utterances for this skill, as well
-as testing instructions are located at http://amzn.to/1LzFrj6
-For additional samples, visit the Alexa Skills Kit Getting Started guide at
-http://amzn.to/1LGWsLG
+TODO: add description
 """
 
-from utils.query_api import search_yelp
+from utils.query_api import *
 import logging
 import random
-
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -94,6 +89,9 @@ def build_output(session_attributes, card_title, should_end_session):
     if 'ChangeRecommendation' == session_attributes['state']:
         return offer_recommendation(session_attributes, card_title, should_end_session)
 
+    if 'RequestMoreData' == session_attributes['state']:
+        return offer_more_data(session_attributes, card_title, should_end_session)        
+
     if 'restaurant' in session_attributes:
         speech_output = "How about " + session_attributes['restaurant'] + " "
     return build_response(session_attributes, build_speechlet_response(
@@ -130,10 +128,42 @@ def offer_recommendation(session_attributes, card_title, should_end_session):
     :param should_end_session:
     :return:
     """
-    name = session_attributes['restaurant']
-    speech_output = "How about " + name + " ?"
+    name = session_attributes['restaurant']['name']
+    rating = session_attributes['restaurant']['rating']
+    review_count = session_attributes['restaurant']['review_count']
+    price = session_attributes['restaurant']['price']
+    speech_output = "How about {}? They have {} reviews and their rating is {}. \
+    Do you need more infomation about this place ?".format(name, review_count, rating)
+    # TODO: if a place is too expensive, recommende other cheaper place
+    if price > 3:
+        speech_output = speech_output + " But the price there is pretty expensive. Do you need me to find a cheaper one?"
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_output, should_end_session))
+    
+
+def offer_more_data(session_attributes, card_title, should_end_session, infotype):
+    """
+    The output speech for offer more data
+    TODO: support more infotype
+    :param session_attributes:
+    :param card_title:
+    :param should_end_session:
+    :return:
+    """
+
+    # id for business detail
+    _id = session_attributes['restaurant']['id']
+    place = search_yelp_business(_id)
+
+    if infotype == 'phone number':
+        phone = place['display_phone']
+        speech_output = "Their phone number is {}.".format(phone)
+    elif infotype == 'address':
+        address = place['location']['display_address']
+        speech_output = "Their address is {} {}.".format(address[0], address[1])
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, speech_output, should_end_session))
+
 
 
 def check_constraints(session_attributes):
@@ -168,10 +198,9 @@ def search_with_parameter(session_attributes, rank = 0):
     cuisine = session_attributes['food']
     location = session_attributes['location']
     places = search_yelp(keyword=cuisine, location=location, limit=rank+1)
-    print(places)
     name = places[len(places)-1]['name']
     print(name)
-    update_restaurant_attributes(session_attributes, name)
+    update_restaurant_attributes(session_attributes, places[len(places) - 1])
     update_rank_attributes(session_attributes, rank)
 
 
@@ -191,7 +220,12 @@ def update_location_attributes(session_attributes, location):
 
 
 def update_restaurant_attributes(session_attributes, restaurant):
-    session_attributes["restaurant"] = restaurant
+    session_attributes['restaurant'] = {}
+    session_attributes['restaurant']['name'] = restaurant['name']
+    session_attributes['restaurant']['rating'] = restaurant['rating']
+    session_attributes['restaurant']['review_count'] = restaurant['review_count']
+    session_attributes['restaurant']['price'] = len(restaurant['price'])
+    session_attributes['restaurant']['id'] = restaurant['id']
     return session_attributes
 
 
@@ -265,7 +299,8 @@ def request_data(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
-    return
+    infotype = get_value_from_intent(intent, 'infotype')
+    return offer_more_data(session_attributes, card_title, should_end_session, infotype)
 
 
 def change_recommendation(intent, session):
@@ -284,7 +319,7 @@ def change_recommendation(intent, session):
     rank = session_attributes['rank']
     if 'next' in intent['slots'] and 'value' in intent['slots']['next']:
         rank = rank + 1
-    if 'sequence' in intent['slots']and 'value' in intent['slots']['sequence']:
+    if 'sequence' in intent['slots'] and 'value' in intent['slots']['sequence']:
         if intent['slots']['sequence']['value'] == 'previous' and rank > 0:
             rank = rank - 1
         else:
@@ -354,7 +389,7 @@ def set_cuisine(intent, session):
     print(location, cuisine)
     if location is not None and cuisine is not None:
         places = search_yelp(keyword=cuisine, location=location, limit=1)
-        update_restaurant_attributes(session_attributes, places[0]['name'])
+        update_restaurant_attributes(session_attributes, places[0])
 
     return build_output(session_attributes, card_title, should_end_session)
 
@@ -381,7 +416,7 @@ def set_location(intent, session):
         cuisine = get_cuisine(session)
         if cuisine is not None:
             places = search_yelp(keyword=cuisine, location=location, limit=1)
-            update_restaurant_attributes(session_attributes, places[0]['name'])
+            update_restaurant_attributes(session_attributes, places[0])
 
     return build_output(session_attributes, card_title, should_end_session)
 
@@ -407,7 +442,7 @@ require_constraints = ['food', 'location']
 
 previous_state = {
     'SetConstraint': {'initial', 'SetConstraint'},
-    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation'},
+    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation','RequestMoreData'},
     'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
 }

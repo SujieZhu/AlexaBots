@@ -72,8 +72,16 @@
                 },
                 {
                     "name": "RequestMoreData",
-                    "slots": [],
-                    "samples": []
+                    "slots": [
+                        {
+                            "name": "infotype",
+                            "type": "InfoType"
+                        }
+                    ],
+                    "samples": [
+                        "what is their phone",
+                        "what is their {infotype}"
+                    ]
                 },
                 {
                     "name": "ChangeRecommendation",
@@ -529,6 +537,26 @@
                         {
                             "name": {
                                 "value": "restaurant"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "InfoType",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "opening hour"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "address"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "phone number"
                             }
                         }
                     ]
