@@ -1,4 +1,4 @@
-from botocore.vendored import requests
+import requests
 
 # API Keys (linked to my personal google and yelp accounts)
 # Maximum number of queries per day: 5000
@@ -10,6 +10,8 @@ GOOGLE_NEARBYSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/nearbysea
 GOOGLE_TEXTSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/textsearch/json'
 GOOGLE_DETAIL_PATH = 'https://maps.googleapis.com/maps/api/place/details/json'
 
+GOOGLE_DIRECTION_PATH = 'https://maps.googleapis.com/maps/api/directions/json'
+
 YELP_SEARCH_PATH = 'https://api.yelp.com/v3/businesses/search'
 YELP_BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
 
@@ -17,15 +19,15 @@ YELP_BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
 # --------------------------------- GOOGLE ---------------------------------- #
 def search_google(keyword, location='', radius=8000, types=['restaurant',], limit=1, api_key=GOOGLE_KEY):
     """Query the Google Search API by a search keyword and location
-       (through https GET request, you don't need to install googleplaces package).
+       (based on https GET request, no need for googleplaces package).
 
             Args:
-                api_key
-                keyword
-                location (str): The latitude/longitude, e.g. '47.606210, -122.332070'
-                radius
+                keyword: [string]
+                location [string]: The latitude/longitude, e.g. '47.606210, -122.332070'
+                radius: [string]
                 types
                 limit
+                api_key
 
             Returns:
                 places: The JSON response from the request.
@@ -41,13 +43,22 @@ def search_google(keyword, location='', radius=8000, types=['restaurant',], limi
 
     g_places = request(GOOGLE_TEXTSEARCH_PATH, api_key, url_params=url_params)
     places = g_places['results'][:limit]
-    for i in range(len(places)):
-        detail = get_google_detail(places[i]['place_id'])
-        places[i]['detail'] = detail
+    # for i in range(len(places)):
+    #     detail = get_google_detail(places[i]['place_id'])
+    #     places[i]['detail'] = detail
     return places
 
 
 def get_google_detail(placeid, api_key=GOOGLE_KEY):
+    """Get the detail information for a Google Place
+
+                Args:
+                    placeid: [string]
+                    api_key: [string]
+
+                Returns:
+                    detail: The JSON response for place detail
+    """
     url_params = {
         'placeid': placeid.replace(' ', '+'),
         'key': api_key
@@ -56,8 +67,37 @@ def get_google_detail(placeid, api_key=GOOGLE_KEY):
     return detail['result']
 
 
+def get_google_direction(travelmode, origin, destination, use_id=False, api_key=GOOGLE_KEY):
+    """Query the Google Direction API for travel summary
+
+            Args:
+                travelmode: [string]
+                origin: [string]
+                destination: [string]
+                use_id: [boolean] True for using place_id for origin and destination
+                api_key: [string]
+
+            Returns:
+                direction: The JSON response for travel summary.
+    """
+
+    if use_id:
+        origin = 'place_id:%s' % origin
+        destination = 'place_id:%s' % destination
+    url_params = {
+        'origin': origin,
+        'destination': destination,
+        'key': api_key,
+        'mode': travelmode,
+        'avoid': []
+    }
+
+    direction = request(GOOGLE_DIRECTION_PATH, api_key, url_params=url_params)
+    return direction['routes'][0]['legs'][0]
+
+
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True):
+def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True, radius=8000):
     """Query the YELP Search API by a search term and location.
 
     Args:
@@ -76,7 +116,8 @@ def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, op
     url_params = {
         'term': keyword.replace(' ', '+'),
         'location': location.replace(' ', '+'),
-        'limit': limit
+        'limit': limit,
+        'radius': radius
     }
 
     if open_now: url_params['open_now'] = True
@@ -146,13 +187,14 @@ def request(path, api_key, url_params=None):
     print('Querying {0} ...'.format(path))
 
     response = requests.request('GET', path, headers=headers, params=url_params)
-
     return response.json()
 
 
 if __name__ == '__main__':
-    google_places = search_google(keyword='Seattle seafood', location='47.606210, -122.332070', radius=8000)  # location='47.606210, -122.332070', radius=8000
-    yelp_places = search_yelp(keyword='seafood', location='Seattle', limit=1)
+    google_places = search_google(keyword='Seattle seafood', location='47.606210, -122.332070', radius='8000')  # location='47.606210, -122.332070', radius=8000
+    yelp_places = search_yelp(keyword='seafood', location='Seattle', limit=1, radius=5000)
+    direction = get_google_direction('driving', 'Seattle', 'Portland')
 
+    print('Direction: \n', direction)
     print('Google: \n', google_places[0])
     print('\nYelp: \n', yelp_places[0])
