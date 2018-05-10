@@ -87,10 +87,7 @@ def build_output(session_attributes, card_title, should_end_session):
             return prompt_constraint(session_attributes, lack, card_title, should_end_session)
 
     if 'ChangeRecommendation' == session_attributes['state']:
-        return offer_recommendation(session_attributes, card_title, should_end_session)
-
-    if 'RequestMoreData' == session_attributes['state']:
-        return offer_more_data(session_attributes, card_title, should_end_session)        
+        return offer_recommendation(session_attributes, card_title, should_end_session)      
 
     if 'restaurant' in session_attributes:
         speech_output = "How about " + session_attributes['restaurant'] + " "
