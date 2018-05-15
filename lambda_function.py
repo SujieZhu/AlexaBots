@@ -5,6 +5,7 @@ TODO: add description
 from utils.query_api import *
 import logging
 import random
+
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
@@ -15,6 +16,18 @@ from dynamo_db.dynamo import *
 dynamodb = boto3.resource('dynamodb')
 user_info = dynamodb.Table('UserInfo')
 previous_recs = dynamodb.Table('PreviousRecommendations')
+
+import time
+
+# Get time, and we can use this info to infer if the user want places which is open now.
+time_array = time.localtime()    # return time of current time zone, sample return:
+                    # time.struct_time(tm_year=2018, tm_mon=5, tm_mday=15, tm_hour=14, tm_min=53, tm_sec=20, tm_wday=1, tm_yday=135, tm_isdst=1)
+tm_hour = time_array[3]
+tm_min = time_array[4]
+tm_wday = time_array[6]
+
+current_place = '710 NE 42nd street, seattle, 98105'
+
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -160,8 +173,15 @@ def offer_recommendation(session_attributes, card_title, should_end_session):
     rating = session_attributes['restaurant']['rating']
     review_count = session_attributes['restaurant']['review_count']
     price = session_attributes['restaurant']['price']
-    speech_output = "How about {}? They have {} reviews and their rating is {}. \
-    Do you need more infomation about this place ?".format(name, review_count, rating)
+    speech_output = "How about {}? They have {} reviews and their rating is {}.".format(name, review_count, rating)
+    
+    # TODO: recommend a better way to get there.
+    distance = session_attributes['restaurant']['walking_distance']
+    walking_duration = session_attributes['restaurant']['walking_duration']
+    driving_duration = session_attributes['restaurant']['driving_duration']
+    speech_output = speech_output + " It is {} away and it take {} to walk there or {} to drive there.".format(distance, walking_duration, driving_duration)
+    
+    speech_output = speech_output + " Do you need more infomation about this place ?"
     # TODO: if a place is too expensive, recommende other cheaper place
     if price > 3:
         speech_output = speech_output + " But the price there is pretty expensive. Do you need me to find a cheaper one?"
@@ -179,16 +199,25 @@ def offer_more_data(session_attributes, card_title, should_end_session, infotype
     :return:
     """
 
-    # id for business detail
+    # id for business detail, used for adding more detail info.
     _id = session_attributes['restaurant']['id']
-    place = search_yelp_business(_id)
+
+    restaurant = session_attributes['restaurant']
 
     if infotype == 'phone number':
-        phone = place['display_phone']
+        phone = restaurant['display_phone']
         speech_output = "Their phone number is {}.".format(phone)
     elif infotype == 'address':
-        address = place['location']['display_address']
-        speech_output = "Their address is {} {}.".format(address[0], address[1])
+        address = restaurant['location']['display_address']
+        speech_output = "Their address is {}.".format(address)
+    elif infotype == 'opening hour':
+        restaurant = search_yelp_business(_id)
+        opening_hour = restaurant['hours'][0]['open'][tm_wday]['end']
+        speech_output = "They open until {}:{} today.".format(opening_hour[0:2], opening_hour[2:4])
+    # Just text excerpt, maybe not useful
+    elif infotype == 'reviews':
+        restaurant = search_yelp_business(_id + '/reviews')
+        speech_output = restaurant['reviews'][0]['text']
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_output, should_end_session))
 
@@ -271,6 +300,15 @@ def update_restaurant_attributes(session_attributes, restaurant):
     session_attributes['restaurant']['review_count'] = restaurant['review_count']
     session_attributes['restaurant']['price'] = len(restaurant['price'])
     session_attributes['restaurant']['id'] = restaurant['id']
+    session_attributes['restaurant']['display_phone'] = restaurant['display_phone']
+    destination_place = restaurant['location']['display_address'][0] + restaurant['location']['display_address'][1]
+    session_attributes['restaurant']['display_address'] = destination_place
+    walking_direction = get_google_direction('walking', current_place, destination_place)
+    session_attributes['restaurant']['walking_distance'] = walking_direction['distance']['text']
+    session_attributes['restaurant']['walking_duration'] = walking_direction['duration']['text']
+    driving_direction = get_google_direction('driving', current_place, destination_place)
+    session_attributes['restaurant']['driving_distance'] = driving_direction['distance']['text']
+    session_attributes['restaurant']['driving_duration'] = driving_direction['duration']['text']
     return session_attributes
 
 

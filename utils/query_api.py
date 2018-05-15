@@ -10,6 +10,8 @@ GOOGLE_NEARBYSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/nearbysea
 GOOGLE_TEXTSEARCH_PATH = 'https://maps.googleapis.com/maps/api/place/textsearch/json'
 GOOGLE_DETAIL_PATH = 'https://maps.googleapis.com/maps/api/place/details/json'
 
+GOOGLE_DIRECTION_PATH = 'https://maps.googleapis.com/maps/api/directions/json'
+
 YELP_SEARCH_PATH = 'https://api.yelp.com/v3/businesses/search'
 YELP_BUSINESS_PATH = 'https://api.yelp.com/v3/businesses/'  # Business ID will come after slash.
 
@@ -53,6 +55,32 @@ def get_google_detail(placeid, api_key=GOOGLE_KEY):
     detail = request(GOOGLE_DETAIL_PATH, api_key, url_params=url_params)
     return detail['result']
 
+
+def get_google_direction(travelmode, origin, destination, use_id=False, api_key=GOOGLE_KEY):
+    """Query the Google Direction API for travel summary
+            Args:
+                travelmode: [string]
+                origin: [string]
+                destination: [string]
+                use_id: [boolean] True for using place_id for origin and destination
+                api_key: [string]
+            Returns:
+                direction: The JSON response for travel summary.
+    """
+
+    if use_id:
+        origin = 'place_id:%s' % origin
+        destination = 'place_id:%s' % destination
+    url_params = {
+        'origin': origin,
+        'destination': destination,
+        'key': api_key,
+        'mode': travelmode,
+        'avoid': []
+    }
+
+    direction = request(GOOGLE_DIRECTION_PATH, api_key, url_params=url_params)
+    return direction['routes'][0]['legs'][0]
 
 # --------------------------------- YELP ---------------------------------- #
 def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True):
@@ -150,4 +178,4 @@ if __name__ == '__main__':
     print('\nYelp: \n', yelp_places[0])
     
     yelp_places = search_yelp_business('NCDpIDp2f-DhPO5sL5Hbdw')
-    print('\nYelp: \n', yelp_places)
+    print('\nYelp: \n', yelp_places['hours'][0]['open'][1])
