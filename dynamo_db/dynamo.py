@@ -6,7 +6,10 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
 def make_user_info_item(user_id,**kwargs):
-    """take user_id and kwargs, return item for UserInfo table"""
+    """take user_id and kwargs, return item for UserInfo table
+
+    see schema for enumeration of values that these can take
+    """
     user_info_item = {
         'user_id' : user_id,
         'work_address': kwargs.get('work_address'),

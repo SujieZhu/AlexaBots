@@ -5,6 +5,16 @@ TODO: add description
 from utils.query_api import *
 import logging
 import random
+import boto3
+from boto3.dynamodb.conditions import Key, Attr
+
+from dynamo_db.dynamo import make_user_info_item, get_item_by_key
+
+# --------------- Load DynamoDB settings ----------------------
+
+dynamodb = boto3.resource('dynamodb')
+user_info = dynamodb.Table('UserInfo')
+previous_recs = dynamodb.Table('PreviousRecommendations')
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -46,12 +56,26 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to Mos Eisley Cantina! Tell me what kind "\
-    "of cuisine you are looking for."
+    speech_output = "Welcome back to Mos Eisley Cantina! Tell me what kind " \
+                    "of cuisine you are looking for."
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Welcome to Mos Eisley Cantina! Tell me what kind "\
-    "of cuisine you are looking for."
+    reprompt_text = "Welcome to Mos Eisley Cantina! Tell me what kind " \
+                    "of cuisine you are looking for."
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
+def prompt_for_defaults():
+    """prompt user for default settings"""
+    session_attributes = {}
+    card_title = "Welcome"
+    speech_output = "Welcome to Mos Eisley Cantina. Looks like you're new. Let's set some default " \
+                    "locations for looking up restaurants in future. You can set home and or " \
+                    "work, by address, zip, or both."
+    reprompt_text = "Sorry I didn't get that. Say: home address, work address," \
+                    "home zip, or work zip."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -59,7 +83,7 @@ def get_welcome_response():
 
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Mos eisley cantina. " \
+    speech_output = "Thank you for trying the Mos Eisley cantina. " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -473,9 +497,17 @@ def on_launch(launch_request, session):
 
     print("on_launch requestId=" + launch_request['requestId'] +
           ", sessionId=" + session['sessionId'])
-    # Dispatch to your skill's launch
-    return get_welcome_response()
-
+    # check whether first time user
+    # if you want to pretend you're unrecognised for testing make 'this_user_id' into a bogus value like 'abcdef'
+    this_user_id = session["user"]["userId"]
+    if not get_item_by_key(user_info, 'user_id', this_user_id):
+        # if you want to add thing to the DB do it this way:
+        # user_info.put_item(Item=make_user_info_item(this_user_id)
+        return prompt_for_defaults()
+    else:
+        # return get_welcome_back_response()
+        # Dispatch to your skill's launch
+        return get_welcome_response()
 
 def on_session_ended(session_ended_request, session):
     """ Called when the user ends the session.
