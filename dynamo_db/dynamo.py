@@ -26,6 +26,18 @@ def get_item_by_key(table, partition_key, value):
     return response['Items']
 
 
+def make_user_previous_recommendation_item(session):
+    """with the session, to get the session attribute and
+    add the user_id to the session_attribute
+    """
+    # TODO: put some default parameters to the session_attribute when attribute
+    # initialization.(create an attribute initializer)
+    item = session['attributes']
+    this_user_id = session["user"]["userId"]
+    item['user_id'] = this_user_id
+    return item
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument('dummy', help='')

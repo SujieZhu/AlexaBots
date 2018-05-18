@@ -8,7 +8,7 @@ import random
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
-from dynamo_db.dynamo import make_user_info_item, get_item_by_key
+from dynamo_db.dynamo import *
 
 # --------------- Load DynamoDB settings ----------------------
 
@@ -81,12 +81,17 @@ def prompt_for_defaults():
         card_title, speech_output, reprompt_text, should_end_session))
 
 
-def handle_session_end_request():
+def handle_session_end_request(session):
     card_title = "Session Ended"
     speech_output = "Thank you for trying the Mos Eisley cantina. " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
+
+    item = make_user_previous_recommendation_item(session)
+    print('write to the dynamo db')
+    print(item)
+    print(previous_recs.put_item(Item=item))
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
@@ -500,13 +505,18 @@ def on_launch(launch_request, session):
     # check whether first time user
     # if you want to pretend you're unrecognised for testing make 'this_user_id' into a bogus value like 'abcdef'
     this_user_id = session["user"]["userId"]
-    if not get_item_by_key(user_info, 'user_id', this_user_id):
+    user_account = get_item_by_key(user_info, 'user_id', this_user_id)
+    print(user_account)
+    if not user_account:
         # if you want to add thing to the DB do it this way:
-        # user_info.put_item(Item=make_user_info_item(this_user_id)
+        # user_info.put_item(Item=make_user_info_item(this_user_id))
+        user_info.put_item(Item={'user_id': this_user_id})
         return prompt_for_defaults()
     else:
         # return get_welcome_back_response()
         # Dispatch to your skill's launch
+        # TODO: if the user exist in the database, we need to update information
+        # like user_info.put_item(Item={'user_id':this_user_id})
         return get_welcome_response()
 
 def on_session_ended(session_ended_request, session):
@@ -556,7 +566,7 @@ def on_intent(intent_request, session):
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
-        return handle_session_end_request()
+        return handle_session_end_request(session)
     else:
         raise ValueError("Invalid intent")
 
