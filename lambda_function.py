@@ -191,6 +191,18 @@ def offer_more_data(session_attributes, card_title, should_end_session, infotype
         card_title, speech_output, speech_output, should_end_session))
 
 
+def end_session(session_attributes, card_title, should_end_session = True):
+    """
+    The output speech for ending the session
+    :param session_attributes:
+    :param card_title:
+    :param should_end_session:
+    :return:
+    """
+    speech_output = 'Thank you for using our mos eisley cantina. We hope you enjoy your meal. Have a nice day.'
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, speech_output, should_end_session))
+
 
 def check_constraints(session_attributes):
     """
@@ -360,7 +372,7 @@ def change_recommendation(intent, session):
 
 def change_constraint(intent, session):
     """
-    chaneg constraint by the user
+    change constraint by the user
     TODO: change constraints
     :param intent:
     :param session:
@@ -369,6 +381,72 @@ def change_constraint(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
+    return
+
+def is_positive_feedback(intent):
+    """
+    check whether is the positive feedback
+    :param intent:
+    :return:
+    """
+    if 'positive' in intent['slots'] and 'value' in intent['slots']['positive']:
+        return True
+    elif 'negative' in intent['slots'] and 'value' in intent['slots']['negative']:
+        return False
+    else:
+        return None
+
+def give_feedback(intent, session):
+    """
+    record user's feedback for restarting previous conversation or after recommendation
+    TODO: change constraints
+    :param intent:
+    :param session:
+    :return:
+    """
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+
+    # ask feedback uses the dynamodb info to ask for user feedback of the previous
+    if session_attributes['previous_state'] == 'AskFeedback':
+        # positive feedback
+        if is_positive_feedback(intent):
+            # copy the previous session information
+            session_attributes['food'] = session_attributes['user_history']['food']
+            session_attributes['location'] = session_attributes['user_history']['location']
+            rank = session_attributes['user_history']['rank']
+            session_attributes.pop('user_history')
+            # search with the new rank, it will update the restaurant name and the rank number
+            rank = rank + 1
+            search_with_parameter(session_attributes, rank)
+            # offer a new recommendation based on previous information
+            return offer_recommendation(session_attributes, card_title, should_end_session)
+        # negative feedback
+        else:
+            # ask user for the new food preference and information.
+            # TODO: ask user what information to keep. change the recommendations
+            session_attributes.pop('user_history')
+            session_attributes['state'] = 'initial'
+            lack = check_constraints(session_attributes)
+            #ask user to provide other info
+            return prompt_constraint(session_attributes, lack, card_title, should_end_session)
+    # feedback about the recommendation
+    else:
+        # positive feedback
+        if is_positive_feedback(intent):
+            # user satisfies with the recommendation
+            # end this session
+            end_session(session_attributes, card_title, should_end_session=True)
+        # negative feedback
+        else:
+            # user not satisfied with the recommendation, change another restaurant.
+            rank = session_attributes['rank']
+            # search with the new rank, it will update the restaurant name and the rank number
+            rank = rank + 1
+            search_with_parameter(session_attributes, rank)
+            # offer a new recommendation based on previous information
+            return offer_recommendation(session_attributes, card_title, should_end_session)
     return
 
 
@@ -456,6 +534,7 @@ intent_handler = {
     'RequestMoreData': request_data,
     'ChangeRecommendation': change_recommendation,
     'ChangeConstraint': change_constraint,
+    'GiveFeedback': give_feedback,
     'Unsolved': unsolved_output,
 }
 
@@ -471,6 +550,7 @@ previous_state = {
     'RequestMoreData': {'SetConstraint', 'ChangeRecommendation','RequestMoreData'},
     'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
+    'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation','ChangeConstraint'},
 }
 
 
@@ -498,6 +578,8 @@ def on_session_started(session_started_request, session):
 def on_launch(launch_request, session):
     """ Called when the user launches the skill without specifying what they
     want
+
+    two kinds of responses, randomly pick, ask user for feedback
     """
 
     print("on_launch requestId=" + launch_request['requestId'] +
@@ -505,9 +587,9 @@ def on_launch(launch_request, session):
     # check whether first time user
     # if you want to pretend you're unrecognised for testing make 'this_user_id' into a bogus value like 'abcdef'
     this_user_id = session["user"]["userId"]
-    user_account = get_item_by_key(user_info, 'user_id', this_user_id)
-    print(user_account)
-    if not user_account:
+    user_history = get_item_by_key(previous_recs, 'user_id', this_user_id)
+    print(user_history)
+    if not user_history:
         # if you want to add thing to the DB do it this way:
         # user_info.put_item(Item=make_user_info_item(this_user_id))
         user_info.put_item(Item={'user_id': this_user_id})
@@ -517,7 +599,32 @@ def on_launch(launch_request, session):
         # Dispatch to your skill's launch
         # TODO: if the user exist in the database, we need to update information
         # like user_info.put_item(Item={'user_id':this_user_id})
-        return get_welcome_response()
+        random_int = random.randint(0,1)
+        if random_int == 0:
+            return ask_for_feedback(session, user_history)
+        else:
+            return get_welcome_response()
+
+
+def ask_for_feedback(session, user_history):
+    if 'attributes' not in session:
+        session['attributes'] = {}
+        session['attributes']['state'] = 'AskFeedback'
+    session['attributes']['previous_state'] = session['attributes']['state']
+    session['attributes']['state'] = 'AskFeedback'
+    session['attributes']['user_history'] = user_history
+    card_title = "Welcome"
+    print(user_history)
+    speech_output = "Welcome back to Mos Eisley Cantina. How do you like our recommendation"
+    # TODO: change the previous constraints
+    if 'restaurant' in user_history:
+        speech_output += 'of ' + user_history['restaurant']['name'] + ' ?'
+    reprompt_text = "Sorry I didn't get that. You can offer us your feedbacks"
+    should_end_session = False
+    return build_response(session['attributes'], build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
 
 def on_session_ended(session_ended_request, session):
     """ Called when the user ends the session.
