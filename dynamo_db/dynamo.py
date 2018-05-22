@@ -20,8 +20,11 @@ def make_user_info_item(user_id,**kwargs):
     }
     return user_info_item
 
+
 def get_item_by_key(table, partition_key, value):
     """query a given table and partition key for a value, return response"""
+    # notice that the return is a list of the dicts
+    # TODO: what if multiple record returns? like multiple history. Currently use the last one
     response = table.query(KeyConditionExpression=Key(partition_key).eq(value))
     return response['Items']
 

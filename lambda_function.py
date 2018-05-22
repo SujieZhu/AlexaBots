@@ -82,8 +82,9 @@ def prompt_for_defaults():
 
 
 def handle_session_end_request(session):
+    # end the session and save the user info to the database
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Mos Eisley cantina. " \
+    speech_output = "Thank you for trying the Mos Eisley cantina. We hope you enjoy your meal. " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -92,7 +93,8 @@ def handle_session_end_request(session):
     print('write to the dynamo db')
     print(item)
     print(previous_recs.put_item(Item=item))
-    return build_response({}, build_speechlet_response(
+    print('successfully write out')
+    return build_response(session['attributes'], build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
 
@@ -200,6 +202,10 @@ def end_session(session_attributes, card_title, should_end_session = True):
     :return:
     """
     speech_output = 'Thank you for using our mos eisley cantina. We hope you enjoy your meal. Have a nice day.'
+    item = make_user_previous_recommendation_item(session_attributes)
+    print('write to the dynamo db')
+    print(item)
+    print(previous_recs.put_item(Item=item))
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_output, should_end_session))
 
@@ -260,7 +266,8 @@ def update_location_attributes(session_attributes, location):
 def update_restaurant_attributes(session_attributes, restaurant):
     session_attributes['restaurant'] = {}
     session_attributes['restaurant']['name'] = restaurant['name']
-    session_attributes['restaurant']['rating'] = restaurant['rating']
+    # TODO: dynamo db only support int
+    session_attributes['restaurant']['rating'] = int(restaurant['rating'])
     session_attributes['restaurant']['review_count'] = restaurant['review_count']
     session_attributes['restaurant']['price'] = len(restaurant['price'])
     session_attributes['restaurant']['id'] = restaurant['id']
@@ -383,6 +390,7 @@ def change_constraint(intent, session):
     should_end_session = False
     return
 
+
 def is_positive_feedback(intent):
     """
     check whether is the positive feedback
@@ -395,6 +403,7 @@ def is_positive_feedback(intent):
         return False
     else:
         return None
+
 
 def give_feedback(intent, session):
     """
@@ -415,10 +424,14 @@ def give_feedback(intent, session):
             # copy the previous session information
             session_attributes['food'] = session_attributes['user_history']['food']
             session_attributes['location'] = session_attributes['user_history']['location']
-            rank = session_attributes['user_history']['rank']
+            session_attributes['rank'] = int(session_attributes['user_history']['rank'])
+            rank = session_attributes['rank']
             session_attributes.pop('user_history')
             # search with the new rank, it will update the restaurant name and the rank number
             rank = rank + 1
+            print('new search')
+            print(session_attributes)
+            print(rank)
             search_with_parameter(session_attributes, rank)
             # offer a new recommendation based on previous information
             return offer_recommendation(session_attributes, card_title, should_end_session)
@@ -436,14 +449,16 @@ def give_feedback(intent, session):
         # positive feedback
         if is_positive_feedback(intent):
             # user satisfies with the recommendation
-            # end this session
-            end_session(session_attributes, card_title, should_end_session=True)
+            # end this session and save to dynamodb
+            return handle_session_end_request(session)
         # negative feedback
         else:
             # user not satisfied with the recommendation, change another restaurant.
             rank = session_attributes['rank']
             # search with the new rank, it will update the restaurant name and the rank number
             rank = rank + 1
+            print('new search')
+            print(session_attributes)
             search_with_parameter(session_attributes, rank)
             # offer a new recommendation based on previous information
             return offer_recommendation(session_attributes, card_title, should_end_session)
@@ -550,7 +565,7 @@ previous_state = {
     'RequestMoreData': {'SetConstraint', 'ChangeRecommendation','RequestMoreData'},
     'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
-    'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation','ChangeConstraint'},
+    'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation','ChangeConstraint', 'GiveFeedback'},
 }
 
 
@@ -599,9 +614,12 @@ def on_launch(launch_request, session):
         # Dispatch to your skill's launch
         # TODO: if the user exist in the database, we need to update information
         # like user_info.put_item(Item={'user_id':this_user_id})
-        random_int = random.randint(0,1)
+        print('read from the database')
+        # should be (0,1), 50% likely to use the history. For test, set to 100%
+        random_int = random.randint(0, 0)
         if random_int == 0:
-            return ask_for_feedback(session, user_history)
+            # set the newest history
+            return ask_for_feedback(session, user_history[-1])
         else:
             return get_welcome_response()
 
