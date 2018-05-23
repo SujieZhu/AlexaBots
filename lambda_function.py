@@ -5,6 +5,7 @@ TODO: add description
 from utils.query_api import *
 import logging
 import random
+import time
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
@@ -16,8 +17,6 @@ from dynamo_db.dynamo import *
 dynamodb = boto3.resource('dynamodb')
 user_info = dynamodb.Table('UserInfo')
 previous_recs = dynamodb.Table('PreviousRecommendations')
-
-import time
 
 # Get time, and we can use this info to infer if the user want places which is open now.
 time_array = time.localtime()    # return time of current time zone, sample return:
@@ -79,6 +78,15 @@ def get_welcome_response():
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
+def get_help_response():
+    """help for the user"""
+    session_attributes = {}
+    card_title = "Things to try saying: French food, brunch place near me"
+    speech_output = "Try to set a cuisine type or a location. Something like, French food, or brunch place near me."
+    reprompt_text = "Sorry maybe that didn't make sense. You can say, my zipcode is, or, Id like X food."
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
 
 def prompt_for_defaults():
     """prompt user for default settings"""
@@ -155,8 +163,8 @@ def prompt_constraint(session_attributes, lack, card_title, should_end_session):
         'food': "Which cuisine would you like? You can tell me your favorite food."
     }
     reprompts = {
-        'location': "Sorry I must've been in another galaxy. Try saying something like 'my zipcode is' or just"\
-                    "'in 98105.",
+        'location': "Sorry I must've been in another galaxy. Try saying something like, my zipcode is, or just, " \
+                    "in 98105.",
         'food': "Sorry I'm a space case. Try saying something like 'Ethiopian food' or 'I want to try a beer bar'."
     }
     key = random.randint(0, len(lack)-1)
@@ -739,7 +747,7 @@ def on_intent(intent_request, session):
         # for the registered and our defined intent
         return state_manager(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
-        return get_welcome_response()
+        return get_help_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request(session)
     #elif intent_name == "AMAZON.YesIntent":
