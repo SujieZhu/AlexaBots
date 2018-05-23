@@ -616,7 +616,7 @@ def on_launch(launch_request, session):
         # like user_info.put_item(Item={'user_id':this_user_id})
         print('read from the database')
         # should be (0,1), 50% likely to use the history. For test, set to 100%
-        random_int = random.randint(0, 0)
+        random_int = random.randint(0, 1)
         if random_int == 0:
             # set the newest history
             return ask_for_feedback(session, user_history[-1])
