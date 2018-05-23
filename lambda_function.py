@@ -73,8 +73,8 @@ def get_welcome_response():
                     "of cuisine you are looking for."
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Welcome to Mos Eisley Cantina! Tell me what kind " \
-                    "of cuisine you are looking for."
+    reprompt_text = "I can recommend any types of cuisines. You can say things like I want Thai food or " \
+                    "gastropub near University of Washington, or I'm hungry for pizza near me."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -97,7 +97,8 @@ def prompt_for_defaults():
 def handle_session_end_request(session):
     # end the session and save the user info to the database
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Mos Eisley cantina. We hope you enjoy your meal. " \
+    speech_output = "Thank you for trying the Mos Eisley cantina. We hope you enjoy your meal. Be sure to tell us what" \
+                    "you've thought of it next time we chat!" \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -131,7 +132,7 @@ def build_output(session_attributes, card_title, should_end_session):
             return prompt_constraint(session_attributes, lack, card_title, should_end_session)
 
     if 'ChangeRecommendation' == session_attributes['state']:
-        return offer_recommendation(session_attributes, card_title, should_end_session)      
+        return offer_recommendation(session_attributes, card_title, should_end_session)
 
     if 'restaurant' in session_attributes:
         speech_output = "How about " + session_attributes['restaurant'] + " "
@@ -149,15 +150,21 @@ def prompt_constraint(session_attributes, lack, card_title, should_end_session):
     :param should_end_session:
     :return:
     """
-    reprompt = {
+    prompts = {
         'location': "Where would you like me to look? You can tell me the 5 digit zipcode or your address.",
         'food': "Which cuisine would you like? You can tell me your favorite food."
     }
-
+    reprompts = {
+        'location': "Sorry I must've been in another galaxy. Try saying something like 'my zipcode is' or just"\
+                    "'in 98105.",
+        'food': "Sorry I'm a space case. Try saying something like 'Ethiopian food' or 'I want to try a beer bar'."
+    }
     key = random.randint(0, len(lack)-1)
-    speech_output = reprompt[lack[key]]
+    speech_output = prompts[lack[key]]
+    speech_reprompt = reprompts[lack[key]]
+
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, speech_output, should_end_session))
+        card_title, speech_output, speech_reprompt, should_end_session))
 
 
 def offer_recommendation(session_attributes, card_title, should_end_session):
@@ -174,20 +181,23 @@ def offer_recommendation(session_attributes, card_title, should_end_session):
     review_count = session_attributes['restaurant']['review_count']
     price = session_attributes['restaurant']['price']
     speech_output = "How about {}? They have {} reviews and their rating is {}.".format(name, review_count, rating)
-    
+
     # TODO: recommend a better way to get there.
     distance = session_attributes['restaurant']['walking_distance']
     walking_duration = session_attributes['restaurant']['walking_duration']
     driving_duration = session_attributes['restaurant']['driving_duration']
-    speech_output = speech_output + " It is {} away and it take {} to walk there or {} to drive there.".format(distance, walking_duration, driving_duration)
-    
+    speech_output = speech_output + " It is {} away and it takes {} to walk there or {} to drive there.".format(distance, walking_duration, driving_duration)
+
     speech_output = speech_output + " Do you need more infomation about this place ?"
-    # TODO: if a place is too expensive, recommende other cheaper place
+
+    speech_reprompt = "Sorry I didn't quite get that. Do you want more information about this place? You say that you "\
+    "want the phone number, the opening hours, the address, or the reviews."
+    # TODO: if a place is too expensive, recommend other cheaper place
     if price > 3:
         speech_output = speech_output + " But the price there is pretty expensive. Do you need me to find a cheaper one?"
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, speech_output, should_end_session))
-    
+        card_title, speech_output, speech_reprompt, should_end_session))
+
 
 def offer_more_data(session_attributes, card_title, should_end_session, data_type):
     """
@@ -217,8 +227,10 @@ def offer_more_data(session_attributes, card_title, should_end_session, data_typ
     elif "reviews" in data_type and data_type["reviews"].get('value'):
         restaurant = search_yelp_business(_id + '/reviews')
         speech_output = restaurant['reviews'][0]['text']
+
+    speech_reprompt = "Sorry I didn't get that. What would you like? Try saying something like what is their phone number?"
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, speech_output, should_end_session))
+        card_title, speech_output, speech_reprompt, should_end_session))
 
 
 def end_session(session_attributes, card_title, should_end_session = True):
@@ -229,7 +241,8 @@ def end_session(session_attributes, card_title, should_end_session = True):
     :param should_end_session:
     :return:
     """
-    speech_output = 'Thank you for using our mos eisley cantina. We hope you enjoy your meal. Have a nice day.'
+    speech_output = 'Thank you for using Mos Eisley Santina. We hope you enjoy your meal, and be sure to let us know ' \
+                    ' what you think next time we chat! Have a nice day.'
     item = make_user_previous_recommendation_item(session_attributes)
     print('write to the dynamo db')
     print(item)
@@ -670,11 +683,11 @@ def ask_for_feedback(session, user_history):
     session['attributes']['user_history'] = user_history
     card_title = "Welcome"
     print(user_history)
-    speech_output = "Welcome back to Mos Eisley Cantina. How do you like our recommendation"
+    speech_output = "Welcome back to Mos Eisley Cantina. How did you like our recommendation?"
     # TODO: change the previous constraints
     if 'restaurant' in user_history:
         speech_output += 'of ' + user_history['restaurant']['name'] + ' ?'
-    reprompt_text = "Sorry I didn't get that. You can offer us your feedbacks"
+    reprompt_text = "Sorry I didn't get that. You can offer us your feedback so we get to know you better in future."
     should_end_session = False
     return build_response(session['attributes'], build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
