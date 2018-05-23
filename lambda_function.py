@@ -189,10 +189,9 @@ def offer_recommendation(session_attributes, card_title, should_end_session):
         card_title, speech_output, speech_output, should_end_session))
     
 
-def offer_more_data(session_attributes, card_title, should_end_session, infotype):
+def offer_more_data(session_attributes, card_title, should_end_session, data_type):
     """
     The output speech for offer more data
-    TODO: support more infotype
     :param session_attributes:
     :param card_title:
     :param should_end_session:
@@ -204,18 +203,18 @@ def offer_more_data(session_attributes, card_title, should_end_session, infotype
 
     restaurant = session_attributes['restaurant']
 
-    if infotype == 'phone number':
+    if "phone" in data_type and data_type["phone"].get('value'):
         phone = restaurant['display_phone']
         speech_output = "Their phone number is {}.".format(phone)
-    elif infotype == 'address':
-        address = restaurant['location']['display_address']
+    elif "address" in data_type and data_type["address"].get('value'):
+        address = restaurant['display_address']
         speech_output = "Their address is {}.".format(address)
-    elif infotype == 'opening hour':
+    elif "hours" in data_type and data_type["hours"].get('value'):
         restaurant = search_yelp_business(_id)
         opening_hour = restaurant['hours'][0]['open'][tm_wday]['end']
         speech_output = "They open until {}:{} today.".format(opening_hour[0:2], opening_hour[2:4])
     # Just text excerpt, maybe not useful
-    elif infotype == 'reviews':
+    elif "reviews" in data_type and data_type["reviews"].get('value'):
         restaurant = search_yelp_business(_id + '/reviews')
         speech_output = restaurant['reviews'][0]['text']
     return build_response(session_attributes, build_speechlet_response(
@@ -382,8 +381,8 @@ def request_data(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
-    infotype = get_value_from_intent(intent, 'infotype')
-    return offer_more_data(session_attributes, card_title, should_end_session, infotype)
+    data_type = intent['slots']
+    return offer_more_data(session_attributes, card_title, should_end_session, data_type)
 
 
 def change_recommendation(intent, session):
@@ -730,6 +729,8 @@ def on_intent(intent_request, session):
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request(session)
+    #elif intent_name == "AMAZON.YesIntent":
+    #elif intent_name == "AMAZON.NoIntent"
     else:
         raise ValueError("Invalid intent")
 
