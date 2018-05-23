@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "sujie helper",
+            "invocationName": "cqy",
             "intents": [
                 {
                     "name": "AMAZON.CancelIntent",
@@ -48,6 +48,9 @@
                         }
                     ],
                     "samples": [
+                        "{RequestRecPrefix} {food} food",
+                        "in {location}",
+                        "{food} food {proximity} {location}",
                         "in {zip}",
                         "my zipcode is {zip}",
                         "{location} {now} {food}",
@@ -65,13 +68,26 @@
                     "name": "RequestMoreData",
                     "slots": [
                         {
-                            "name": "infotype",
-                            "type": "InfoType"
+                            "name": "phone",
+                            "type": "PhoneNumber"
+                        },
+                        {
+                            "name": "hours",
+                            "type": "Hours"
+                        },
+                        {
+                            "name": "query",
+                            "type": "MoreData"
+                        },
+                        {
+                            "name": "address",
+                            "type": "Address"
                         }
                     ],
                     "samples": [
-                        "what is their phone",
-                        "what is their {infotype}"
+                        "{query} {address}",
+                        "{query} {phone}",
+                        "{query} {hours}"
                     ]
                 },
                 {
@@ -147,6 +163,64 @@
                 {
                     "name": "AMAZON.NoIntent",
                     "samples": []
+                },
+                {
+                    "name": "TransportationIntent",
+                    "slots": [
+                        {
+                            "name": "duration",
+                            "type": "TravelDuration"
+                        },
+                        {
+                            "name": "car",
+                            "type": "ByCar"
+                        },
+                        {
+                            "name": "foot",
+                            "type": "ByFoot"
+                        }
+                    ],
+                    "samples": [
+                        "{duration} {foot}",
+                        "{duration} {car}"
+                    ]
+                },
+                {
+                    "name": "SetDefaults",
+                    "slots": [
+                        {
+                            "name": "home",
+                            "type": "Home"
+                        },
+                        {
+                            "name": "zip",
+                            "type": "AMAZON.NUMBER"
+                        },
+                        {
+                            "name": "work",
+                            "type": "Work"
+                        }
+                    ],
+                    "samples": [
+                        "my {home} zip is {zip} and my {work} zipcode is {zip}",
+                        "my {home} zipcode is {zip} and my {work} zip is {zip}",
+                        "my {home} zipcode is {zip} and my {work} zipcode is {zip}",
+                        "my {home} zip is {zip} and my {work} zip is {zip}",
+                        "my {work} zip is {zip} and my {home} zipcode is {zip}",
+                        "my {work} zipcode is {zip} and my {home} zip is {zip}",
+                        "my {work} zipcode is {zip} and my {home} zipcode is {zip}",
+                        "my {work} zip is {zip} and my {home} zip is {zip}",
+                        "{home} zip's {zip}",
+                        "{work} zip's {zip}",
+                        "my {work} zip's {zip}",
+                        "my {home} zip's {zip}",
+                        "{work} zipcode is {zip}",
+                        "{home} zipcode is {zip}",
+                        "my {home} zip is {zip}",
+                        " my {work} zip is {zip}",
+                        "my {work} zipcode is {zip}",
+                        "my {home} zipcode is {zip}"
+                    ]
                 }
             ],
             "types": [
@@ -10346,8 +10420,58 @@
                     ]
                 },
                 {
+                    "name": "ByFoot",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "by walking"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "if i walk"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "on a walk"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "by walk"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "walking"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "by foot"
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "InfoType",
                     "values": [
+                        {
+                            "name": {
+                                "value": "hours"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "location "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "opening hours"
+                            }
+                        },
                         {
                             "name": {
                                 "value": "opening hour"
@@ -10361,6 +10485,216 @@
                         {
                             "name": {
                                 "value": "phone number"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "ByCar",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "if i drive"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "in a car"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "to drive"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "driving"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "by car"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "TravelDuration",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "how far is it"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "how many miles"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "how many minutes will it take"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "how many minutes "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "how long will it take"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "how long"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Home",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "house"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "home"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Work",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "job "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "work"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "PhoneNumber",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "phone"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "number"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "phone number"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Address",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "cross streets"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "located"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "location"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "address"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Hours",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "are they open now"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "when are they open"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "open"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "opening hours"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "hours"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "QueryMore",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "what is their "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "what is the "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "what's the "
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "what're their"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "what're the"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "what are their"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "what are the"
                             }
                         }
                     ]
