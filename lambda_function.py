@@ -78,7 +78,8 @@ def get_welcome_response():
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
-def get_help_response():
+
+def get_help_response(session):
     """help for the user"""
     session_attributes = {}
     card_title = "Things to try saying: French food, brunch place near me"
@@ -87,6 +88,7 @@ def get_help_response():
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
+
 
 def prompt_for_defaults():
     """prompt user for default settings"""
@@ -203,6 +205,9 @@ def offer_recommendation(session_attributes, card_title, should_end_session):
     # TODO: if a place is too expensive, recommend other cheaper place
     if price > 3:
         speech_output = speech_output + " But the price there is pretty expensive. Do you need me to find a cheaper one?"
+
+    if 'previous_rank' in session_attributes and session_attributes['rank'] in session_attributes['previous_rank']:
+        speech_output = 'What else do you want to know about {}'.format(name)
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_reprompt, should_end_session))
 
@@ -355,6 +360,16 @@ def get_value_from_intent(intent, name):
         return None
 
 
+def get_rank_from_slot(word):
+    dict_map = {'first': 0, 'second': 1, 'third': 2, 'forth': 3, 'fifth': 4,
+                '1st': 0, '2nd': 1, '3rd': 2, '4th': 3, '5th': 4}
+    print(word)
+    if word not in dict_map:
+        return None
+    else:
+        return dict_map[word]
+
+
 def update_session_attribute(session_attributes, key, value):
     """
     Update one attribute of session
@@ -418,16 +433,22 @@ def change_recommendation(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
-
+    if 'previous_rank' not in session_attributes:
+        session_attributes['previous_rank'] = []
     rank = session_attributes['rank']
+    rank_list = session_attributes['previous_rank']
+    rank_list.append(rank)
+    session_attributes['previous_rank'] = list(set(rank_list))
     if 'next' in intent['slots'] and 'value' in intent['slots']['next']:
         rank = rank + 1
     if 'sequence' in intent['slots'] and 'value' in intent['slots']['sequence']:
         if intent['slots']['sequence']['value'] == 'previous' and rank > 0:
             rank = rank - 1
         else:
-            # now only support the next and previous one
-            rank = rank + 1
+            rank = get_rank_from_slot(intent['slots']['sequence']['value'])
+            # can't figure the rank
+            if rank is None:
+                return unsolved_output(intent, session)
 
     # search with the new rank, it will update the restaurant name and the rank number
     search_with_parameter(session_attributes, rank)
@@ -747,7 +768,7 @@ def on_intent(intent_request, session):
         # for the registered and our defined intent
         return state_manager(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
-        return get_help_response()
+        return get_help_response(session)
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request(session)
     #elif intent_name == "AMAZON.YesIntent":
