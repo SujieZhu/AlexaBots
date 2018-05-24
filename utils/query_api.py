@@ -13,14 +13,12 @@ GOOGLE_DETAIL_PATH = 'https://maps.googleapis.com/maps/api/place/details/json'
 GOOGLE_DIRECTION_PATH = 'https://maps.googleapis.com/maps/api/directions/json'
 
 YELP_SEARCH_PATH = 'https://api.yelp.com/v3/businesses/search'
-YELP_BUSINESS_PATH = '/v3/businesses/'  # Business ID will come after slash.
+YELP_BUSINESS_PATH = 'https://api.yelp.com/v3/businesses/'  # Business ID will come after slash.
 
 
 # --------------------------------- GOOGLE ---------------------------------- #
 def search_google(keyword, location='', radius=8000, types=['restaurant',], limit=1, api_key=GOOGLE_KEY):
     """Query the Google Search API by a search keyword and location
-       (based on https GET request, no need for googleplaces package).
-
             Args:
                 keyword: [str] You can put food type and location here
                 location: [str] The latitude/longitude, e.g. '47.606210, -122.332070' (leave it blank if you don't have this)
@@ -28,7 +26,6 @@ def search_google(keyword, location='', radius=8000, types=['restaurant',], limi
                 types: [list of str] the type of business we are going to search (the default value is 'restaurant')
                 limit: [int] number of items in query result
                 api_key: [str] KEY for api query (the default value should work)
-
             Returns:
                 places: A list of restaurants information (in JSON format).
                     formatted_address: [str] address in [Street No., City, State Zipcode, Country] format
@@ -64,11 +61,9 @@ def search_google(keyword, location='', radius=8000, types=['restaurant',], limi
 
 def get_google_detail(placeid, api_key=GOOGLE_KEY):
     """Get the detail information for a Google Place
-
                 Args:
                     placeid: [str] place_id get from search_google, to retrieval a specific restaurant
                     api_key: [str]
-
                 Returns:
                     detail: The JSON response for place detail information
                         address_components: [dict] JSON format address
@@ -105,14 +100,12 @@ def get_google_detail(placeid, api_key=GOOGLE_KEY):
 
 def get_google_direction(travelmode, origin, destination, use_id=False, api_key=GOOGLE_KEY):
     """Query the Google Direction API for travel summary
-
             Args:
                 travelmode: [string]
                 origin: [string]
                 destination: [string]
                 use_id: [boolean] True for using place_id for origin and destination
                 api_key: [string]
-
             Returns:
                 direction: The JSON response for travel summary.
     """
@@ -135,7 +128,6 @@ def get_google_direction(travelmode, origin, destination, use_id=False, api_key=
 # --------------------------------- YELP ---------------------------------- #
 def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True, radius=8000):
     """Query the YELP Search API by a search term and location.
-
     Args:
         term: [str] The search term passed to the API.
         location: [str] The search location passed to the API.
@@ -163,7 +155,6 @@ def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, op
     try: assert not(open_at and open_now)
     except: open_at = None; open_now = True
 
-
     url_params = {
         'term': keyword.replace(' ', '+'),
         'location': location.replace(' ', '+'),
@@ -180,10 +171,8 @@ def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, op
 
 def search_yelp_business(business_id, api_key=YELP_KEY):
     """Query the YELP Business API by a business ID. (This is currently not used in our project)
-
     Args:
         business_id (str): The ID of the business to query.
-
     Returns:
         dict: The JSON response from the request.
     """
@@ -195,16 +184,13 @@ def search_yelp_business(business_id, api_key=YELP_KEY):
 # --------------------------------- URL wrapper ---------------------------------- #
 def request(path, api_key, url_params=None):
     """Given your GOOGLE/YELP API_KEY, send a GET request to the API.
-
     Args:
         host (str): The domain host of the API.
         path (str): The path of the API after the domain.
         API_KEY (str): Your API Key.
         url_params (dict): An optional set of query parameters in the request.
-
     Returns:
         dict: The JSON response from the request.
-
     Raises:
         HTTPError: An error occurs from the HTTP request.
     """
@@ -225,3 +211,6 @@ if __name__ == '__main__':
     print('Direction: \n', direction)
     print('Google: \n', google_places[0])
     print('\nYelp: \n', yelp_places[0])
+    
+    yelp_places = search_yelp_business('NCDpIDp2f-DhPO5sL5Hbdw')
+    print('\nYelp: \n', yelp_places['hours'][0]['open'][1])

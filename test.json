@@ -1,0 +1,54 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "mos eisley cantina",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "MyCusineIsIntent",
+                    "slots": [
+                        {
+                            "name": "Cuisine",
+                            "type": "AMAZON.Food"
+                        }
+                    ],
+                    "samples": [
+                        "I would like to try {Cuisine}",
+                        "I would like {Cuisine}",
+                        "my favorite food is {Cuisine}"
+                    ]
+                },
+                {
+                    "name": "MyLocationIsIntent",
+                    "slots": [
+                        {
+                            "name": "Location",
+                            "type": "AMAZON.PostalAddress"
+                        },
+                        {
+                            "name": "zipcode",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "I live in {Location}",
+                        "My zipcode is {zipcode}",
+                        "My location is {Location}"
+                    ]
+                }
+            ],
+            "types": []
+        }
+    }
+}
