@@ -6,7 +6,6 @@ from utils.query_api import *
 import logging
 import random
 import time
-
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
@@ -19,8 +18,8 @@ user_info = dynamodb.Table('UserInfo')
 previous_recs = dynamodb.Table('PreviousRecommendations')
 
 # Get time, and we can use this info to infer if the user want places which is open now.
-time_array = time.localtime()    # return time of current time zone, sample return:
-                    # time.struct_time(tm_year=2018, tm_mon=5, tm_mday=15, tm_hour=14, tm_min=53, tm_sec=20, tm_wday=1, tm_yday=135, tm_isdst=1)
+time_array = time.localtime()  # return time of current time zone, sample return:
+# time.struct_time(tm_year=2018, tm_mon=5, tm_mday=15, tm_hour=14, tm_min=53, tm_sec=20, tm_wday=1, tm_yday=135, tm_isdst=1)
 tm_hour = time_array[3]
 tm_min = time_array[4]
 tm_wday = time_array[6]
@@ -72,19 +71,8 @@ def get_welcome_response():
                     "of cuisine you are looking for."
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "I can recommend any types of cuisines. You can say things like I want Thai food or " \
-                    "gastropub near University of Washington, or I'm hungry for pizza near me."
-    should_end_session = False
-    return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, reprompt_text, should_end_session))
-
-
-def get_help_response(session):
-    """help for the user"""
-    session_attributes = {}
-    card_title = "Things to try saying: French food, brunch place near me"
-    speech_output = "Try to set a cuisine type or a location. Something like, French food, or brunch place near me."
-    reprompt_text = "Sorry maybe that didn't make sense. You can say, my zipcode is, or, Id like X food."
+    reprompt_text = "Welcome to Mos Eisley Cantina! Tell me what kind " \
+                    "of cuisine you are looking for."
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -95,10 +83,10 @@ def prompt_for_defaults():
     session_attributes = {}
     card_title = "Welcome"
     speech_output = "Welcome to Mos Eisley Cantina. Looks like you're new. Let's set some default " \
-                    "locations for looking up restaurants in future. You can set home and or " \
-                    "work, by address, zip, or both."
-    reprompt_text = "Sorry I didn't get that. Say: home address, work address," \
-                    "home zip, or work zip."
+                    "locations for looking up restaurants in the future. You can set home and" \
+                    "work zip."
+    reprompt_text = "Sorry I didn't get that. Say: home zip or work zip."
+
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -107,8 +95,7 @@ def prompt_for_defaults():
 def handle_session_end_request(session):
     # end the session and save the user info to the database
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Mos Eisley cantina. We hope you enjoy your meal. Be sure to tell us what" \
-                    "you've thought of it next time we chat!" \
+    speech_output = "Thank you for trying the Mos Eisley cantina. We hope you enjoy your meal. " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -146,6 +133,12 @@ def build_output(session_attributes, card_title, should_end_session):
 
     if 'restaurant' in session_attributes:
         speech_output = "How about " + session_attributes['restaurant'] + " "
+
+    if 'SetDefaults' == session_attributes['state']:
+        which_zip = session_attributes['which_zip']
+        # print('jeenkies! ', get_item_by_key(user_info, session_attributes['this_user_id'], session_attributes['which_zip'] ))
+        speech_output = "Okay, {} zipcode set.".format(which_zip)
+
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_output, should_end_session))
 
@@ -160,21 +153,15 @@ def prompt_constraint(session_attributes, lack, card_title, should_end_session):
     :param should_end_session:
     :return:
     """
-    prompts = {
+    reprompt = {
         'location': "Where would you like me to look? You can tell me the 5 digit zipcode or your address.",
         'food': "Which cuisine would you like? You can tell me your favorite food."
     }
-    reprompts = {
-        'location': "Sorry I must've been in another galaxy. Try saying something like, my zipcode is, or just, " \
-                    "in 98105.",
-        'food': "Sorry I'm a space case. Try saying something like 'Ethiopian food' or 'I want to try a beer bar'."
-    }
-    key = random.randint(0, len(lack)-1)
-    speech_output = prompts[lack[key]]
-    speech_reprompt = reprompts[lack[key]]
 
+    key = random.randint(0, len(lack) - 1)
+    speech_output = reprompt[lack[key]]
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, speech_reprompt, should_end_session))
+        card_title, speech_output, speech_output, should_end_session))
 
 
 def offer_recommendation(session_attributes, card_title, should_end_session):
@@ -196,25 +183,22 @@ def offer_recommendation(session_attributes, card_title, should_end_session):
     distance = session_attributes['restaurant']['walking_distance']
     walking_duration = session_attributes['restaurant']['walking_duration']
     driving_duration = session_attributes['restaurant']['driving_duration']
-    speech_output = speech_output + " It is {} away and it takes {} to walk there or {} to drive there.".format(distance, walking_duration, driving_duration)
+    speech_output = speech_output + " It is {} away and it take {} to walk there or {} to drive there.".format(distance,
+                                                                                                               walking_duration,
+                                                                                                               driving_duration)
 
     speech_output = speech_output + " Do you need more infomation about this place ?"
-
-    speech_reprompt = "Sorry I didn't quite get that. Do you want more information about this place? You say that you "\
-    "want the phone number, the opening hours, the address, or the reviews."
-    # TODO: if a place is too expensive, recommend other cheaper place
+    # TODO: if a place is too expensive, recommende other cheaper place
     if price > 3:
         speech_output = speech_output + " But the price there is pretty expensive. Do you need me to find a cheaper one?"
-
-    if 'previous_rank' in session_attributes and session_attributes['rank'] in session_attributes['previous_rank']:
-        speech_output = 'What else do you want to know about {}'.format(name)
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, speech_reprompt, should_end_session))
+        card_title, speech_output, speech_output, should_end_session))
 
 
-def offer_more_data(session_attributes, card_title, should_end_session, data_type):
+def offer_more_data(session_attributes, card_title, should_end_session, infotype):
     """
     The output speech for offer more data
+    TODO: support more infotype
     :param session_attributes:
     :param card_title:
     :param should_end_session:
@@ -226,27 +210,25 @@ def offer_more_data(session_attributes, card_title, should_end_session, data_typ
 
     restaurant = session_attributes['restaurant']
 
-    if "phone" in data_type and data_type["phone"].get('value'):
+    if infotype == 'phone number':
         phone = restaurant['display_phone']
         speech_output = "Their phone number is {}.".format(phone)
-    elif "address" in data_type and data_type["address"].get('value'):
-        address = restaurant['display_address']
+    elif infotype == 'address':
+        address = restaurant['location']['display_address']
         speech_output = "Their address is {}.".format(address)
-    elif "hours" in data_type and data_type["hours"].get('value'):
+    elif infotype == 'opening hour':
         restaurant = search_yelp_business(_id)
         opening_hour = restaurant['hours'][0]['open'][tm_wday]['end']
         speech_output = "They open until {}:{} today.".format(opening_hour[0:2], opening_hour[2:4])
     # Just text excerpt, maybe not useful
-    elif "reviews" in data_type and data_type["reviews"].get('value'):
+    elif infotype == 'reviews':
         restaurant = search_yelp_business(_id + '/reviews')
         speech_output = restaurant['reviews'][0]['text']
-
-    speech_reprompt = "Sorry I didn't get that. What would you like? Try saying something like what is their phone number?"
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, speech_reprompt, should_end_session))
+        card_title, speech_output, speech_output, should_end_session))
 
 
-def end_session(session_attributes, card_title, should_end_session = True):
+def end_session(session_attributes, card_title, should_end_session=True):
     """
     The output speech for ending the session
     :param session_attributes:
@@ -254,8 +236,7 @@ def end_session(session_attributes, card_title, should_end_session = True):
     :param should_end_session:
     :return:
     """
-    speech_output = 'Thank you for using Mos Eisley Santina. We hope you enjoy your meal, and be sure to let us know ' \
-                    ' what you think next time we chat! Have a nice day.'
+    speech_output = 'Thank you for using our mos eisley cantina. We hope you enjoy your meal. Have a nice day.'
     item = make_user_previous_recommendation_item(session_attributes)
     print('write to the dynamo db')
     print(item)
@@ -267,7 +248,7 @@ def end_session(session_attributes, card_title, should_end_session = True):
 def check_constraints(session_attributes):
     """
     check the constraints' sufficiency to call yelp API
-    if the constraints is sufficiency, call yelp to generate the restaurant
+    if the constraints is sufficient, call yelp to generate the restaurant
     if not sufficient, produce the constraints list for the output
     :param session_attributes:
     :return:
@@ -284,7 +265,7 @@ def check_constraints(session_attributes):
     return lack
 
 
-def search_with_parameter(session_attributes, rank = 0):
+def search_with_parameter(session_attributes, rank=0):
     """
     call the Yelp API with the parameter dict
     TODO: add more parameter mapping to call YELP API(add more search constraints)
@@ -295,8 +276,8 @@ def search_with_parameter(session_attributes, rank = 0):
     """
     cuisine = session_attributes['food']
     location = session_attributes['location']
-    places = search_yelp(keyword=cuisine, location=location, limit=rank+1)
-    name = places[len(places)-1]['name']
+    places = search_yelp(keyword=cuisine, location=location, limit=rank + 1)
+    name = places[len(places) - 1]['name']
     print(name)
     update_restaurant_attributes(session_attributes, places[len(places) - 1])
     update_rank_attributes(session_attributes, rank)
@@ -341,7 +322,6 @@ def get_cuisine(session):
     if session.get('attributes', {}) and "food" in session.get('attributes', {}):
         cuisine = session['attributes']['food']
         return cuisine
-    else:
         return None
 
 
@@ -349,25 +329,13 @@ def get_location(session):
     if session.get('attributes', {}) and "location" in session.get('attributes', {}):
         location = session['attributes']['location']
         return location
-    else:
-        return None
+    return None
 
 
 def get_value_from_intent(intent, name):
     if name in intent['slots'] and 'value' in intent['slots'][name]:
         return intent['slots'][name]['value']
-    else:
-        return None
-
-
-def get_rank_from_slot(word):
-    dict_map = {'first': 0, 'second': 1, 'third': 2, 'forth': 3, 'fifth': 4,
-                '1st': 0, '2nd': 1, '3rd': 2, '4th': 3, '5th': 4}
-    print(word)
-    if word not in dict_map:
-        return None
-    else:
-        return dict_map[word]
+    return None
 
 
 def update_session_attribute(session_attributes, key, value):
@@ -417,8 +385,8 @@ def request_data(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
-    data_type = intent['slots']
-    return offer_more_data(session_attributes, card_title, should_end_session, data_type)
+    infotype = get_value_from_intent(intent, 'infotype')
+    return offer_more_data(session_attributes, card_title, should_end_session, infotype)
 
 
 def change_recommendation(intent, session):
@@ -433,22 +401,16 @@ def change_recommendation(intent, session):
     card_title = intent['name']
     session_attributes = session['attributes']
     should_end_session = False
-    if 'previous_rank' not in session_attributes:
-        session_attributes['previous_rank'] = []
+
     rank = session_attributes['rank']
-    rank_list = session_attributes['previous_rank']
-    rank_list.append(rank)
-    session_attributes['previous_rank'] = list(set(rank_list))
     if 'next' in intent['slots'] and 'value' in intent['slots']['next']:
         rank = rank + 1
     if 'sequence' in intent['slots'] and 'value' in intent['slots']['sequence']:
         if intent['slots']['sequence']['value'] == 'previous' and rank > 0:
             rank = rank - 1
         else:
-            rank = get_rank_from_slot(intent['slots']['sequence']['value'])
-            # can't figure the rank
-            if rank is None:
-                return unsolved_output(intent, session)
+            # now only support the next and previous one
+            rank = rank + 1
 
     # search with the new rank, it will update the restaurant name and the rank number
     search_with_parameter(session_attributes, rank)
@@ -521,7 +483,7 @@ def give_feedback(intent, session):
             session_attributes.pop('user_history')
             session_attributes['state'] = 'initial'
             lack = check_constraints(session_attributes)
-            #ask user to provide other info
+            # ask user to provide other info
             return prompt_constraint(session_attributes, lack, card_title, should_end_session)
     # feedback about the recommendation
     else:
@@ -558,10 +520,10 @@ def unsolved_output(intent, session):
     speech_output = ""
     if 'location' in session_attributes:
         speech_output += "I now know your location is " + \
-                        session_attributes['location'] + ". "
+                         session_attributes['location'] + ". "
     if 'cuisine' in session_attributes:
         speech_output += "I now know your favorite cuisine is " + \
-                        session_attributes['cuisine'] + ". "
+                         session_attributes['cuisine'] + ". "
     else:
         speech_output = "I'm not sure what your favorite cuisine is. " \
                         "Please try again."
@@ -604,7 +566,7 @@ def set_location(intent, session):
     print(intent)
     if 'zip' in intent['slots'] and 'value' in intent['slots']['zip']:
         location = intent['slots']['zip']['value']
-    if 'location' in intent['slots']and 'value' in intent['slots']['location']:
+    if 'location' in intent['slots'] and 'value' in intent['slots']['location']:
         location = intent['slots']['location']['value']
 
     if location is not None:
@@ -619,6 +581,37 @@ def set_location(intent, session):
     return build_output(session_attributes, card_title, should_end_session)
 
 
+def set_default_zips(intent, session):
+    """
+	Sets the users default work or home zipcode.
+    """
+
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+    this_user_id = session["user"]["userId"]
+    session_attributes['this_user_id'] = this_user_id
+
+    if 'value' in intent['slots']['homezip']:
+        new_home_zip = intent['slots']['homezip']['value']
+
+        key_value = dict({'user_id':this_user_id})
+        attUpdate_value = dict({'home_zip':{'Value':new_home_zip}})
+
+        user_info.update_item(Key=key_value, AttributeUpdates=attUpdate_value )
+        session_attributes['which_zip'] = 'home'
+
+    if 'value' in intent['slots']['workzip']:
+        new_work_zip = intent['slots']['workzip']['value']
+
+        key_value = dict({'user_id': this_user_id})
+        attUpdate_value = dict({'work_zip': {'Value':new_work_zip}})
+
+        user_info.update_item(Key=key_value, AttributeUpdates=attUpdate_value)
+        session_attributes['which_zip'] = 'home and work' if (session_attributes.get('which_zip') == 'home') else 'work'
+
+    return build_output(session_attributes, card_title, should_end_session)
+
 
 # --------------- Events ------------------
 # intent handler register
@@ -630,21 +623,24 @@ intent_handler = {
     'ChangeConstraint': change_constraint,
     'GiveFeedback': give_feedback,
     'Unsolved': unsolved_output,
+    'SetDefaults': set_default_zips
 }
 
 # global variables for the constraints
 constraints = ['food', 'location', 'zip', 'now']
+
 # global variables for the required constraints used in prompt_constraint function
 # will add more in the future
 require_constraints = ['food', 'location']
 
-
 previous_state = {
-    'SetConstraint': {'initial', 'SetConstraint'},
-    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation','RequestMoreData'},
+    'SetConstraint': {'initial', 'SetConstraint','SetDefaults'},
+    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation', 'RequestMoreData'},
     'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
-    'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation','ChangeConstraint', 'GiveFeedback'},
+    'GiveFeedback': {'SetDefaults', 'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint',
+                     'GiveFeedback'},
+    'SetDefaults': {'initial', 'SetDefaults'}
 }
 
 
@@ -658,8 +654,7 @@ def check_previous_state(session):
     current = session['attributes']['state']
     if previous in previous_state[current]:
         return True
-    else:
-        return False
+    return False
 
 
 def on_session_started(session_started_request, session):
@@ -712,15 +707,14 @@ def ask_for_feedback(session, user_history):
     session['attributes']['user_history'] = user_history
     card_title = "Welcome"
     print(user_history)
-    speech_output = "Welcome back to Mos Eisley Cantina. How did you like our recommendation?"
+    speech_output = "Welcome back to Mos Eisley Cantina. How do you like our recommendation"
     # TODO: change the previous constraints
     if 'restaurant' in user_history:
         speech_output += 'of ' + user_history['restaurant']['name'] + ' ?'
-    reprompt_text = "Sorry I didn't get that. You can offer us your feedback so we get to know you better in future."
+    reprompt_text = "Sorry I didn't get that. You can offer us your feedbacks"
     should_end_session = False
     return build_response(session['attributes'], build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
-
 
 
 def on_session_ended(session_ended_request, session):
@@ -768,16 +762,11 @@ def on_intent(intent_request, session):
         # for the registered and our defined intent
         return state_manager(intent, session)
     elif intent_name == "AMAZON.HelpIntent":
-        return get_help_response(session)
+        return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
         return handle_session_end_request(session)
-    #elif intent_name == "AMAZON.YesIntent":
-    #elif intent_name == "AMAZON.NoIntent"
     else:
         raise ValueError("Invalid intent")
-
-
-
 
 
 # --------------- Main handler ------------------
