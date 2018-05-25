@@ -634,7 +634,7 @@ constraints = ['food', 'location', 'zip', 'now']
 require_constraints = ['food', 'location']
 
 previous_state = {
-    'SetConstraint': {'initial', 'SetConstraint','SetDefaults'},
+    'SetConstraint': {'initial', 'SetConstraint', 'SetDefaults'},
     'RequestMoreData': {'SetConstraint', 'ChangeRecommendation', 'RequestMoreData'},
     'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
