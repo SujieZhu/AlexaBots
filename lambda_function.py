@@ -117,7 +117,6 @@ def build_output(session_attributes, card_title, should_end_session):
     :param should_end_session:
     :return:
     """
-    print(session_attributes)
     if 'SetConstraint' == session_attributes['state']:
         lack = check_constraints(session_attributes)
         # check info is sufficient or not
@@ -135,9 +134,12 @@ def build_output(session_attributes, card_title, should_end_session):
         speech_output = "How about " + session_attributes['restaurant'] + " "
 
     if 'SetDefaults' == session_attributes['state']:
-        which_zip = session_attributes['which_zip']
+        if session_attributes.get('which_zip'):
+            which = session_attributes['which_zip'] + ' zipcode'
+        if session_attributes.get('which_address'):
+            which = session_attributes['which_address'] + ' address'
         # print('jeenkies! ', get_item_by_key(user_info, session_attributes['this_user_id'], session_attributes['which_zip'] ))
-        speech_output = "Okay, {} zipcode set.".format(which_zip)
+        speech_output = "Okay, {} set.".format(which)
 
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_output, should_end_session))
@@ -581,7 +583,8 @@ def set_location(intent, session):
     return build_output(session_attributes, card_title, should_end_session)
 
 
-def set_default_zips(intent, session):
+def set_default_zip_or_address(intent, session):
+
     """
 	Sets the users default work or home zipcode.
     """
@@ -610,6 +613,24 @@ def set_default_zips(intent, session):
         user_info.update_item(Key=key_value, AttributeUpdates=attUpdate_value)
         session_attributes['which_zip'] = 'home and work' if (session_attributes.get('which_zip') == 'home') else 'work'
 
+    if 'value' in intent['slots']['homeaddress']:
+        new_home_address = intent['slots']['homeaddress']['value']
+
+        key_value = dict({'user_id': this_user_id})
+        attUpdate_value = dict({'home_address': {'Value':new_home_address}})
+
+        user_info.update_item(Key=key_value, AttributeUpdates=attUpdate_value)
+        session_attributes['which_address'] = 'home and work' if (session_attributes.get('which_address') == 'home') else 'work'
+
+    if 'value' in intent['slots']['workaddress']:
+        new_work_address = intent['slots']['workaddress']['value']
+
+        key_value = dict({'user_id': this_user_id})
+        attUpdate_value = dict({'work_address': {'Value':new_work_address}})
+
+        user_info.update_item(Key=key_value, AttributeUpdates=attUpdate_value)
+        session_attributes['which_address'] = 'home and work' if (session_attributes.get('which_address') == 'home') else 'work'
+
     return build_output(session_attributes, card_title, should_end_session)
 
 
@@ -623,7 +644,7 @@ intent_handler = {
     'ChangeConstraint': change_constraint,
     'GiveFeedback': give_feedback,
     'Unsolved': unsolved_output,
-    'SetDefaults': set_default_zips
+    'SetDefaults': set_default_zip_or_address
 }
 
 # global variables for the constraints
