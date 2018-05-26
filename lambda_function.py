@@ -19,8 +19,10 @@ user_info = dynamodb.Table('UserInfo')
 previous_recs = dynamodb.Table('PreviousRecommendations')
 
 # Get time, and we can use this info to infer if the user want places which is open now.
-time_array = time.localtime()  # return time of current time zone, sample return:
+# return time of current time zone, sample return:
 # time.struct_time(tm_year=2018, tm_mon=5, tm_mday=15, tm_hour=14, tm_min=53, tm_sec=20, tm_wday=1, tm_yday=135, tm_isdst=1)
+time_array = time.localtime()
+
 tm_hour = time_array[3]
 tm_min = time_array[4]
 tm_wday = time_array[6]
@@ -227,10 +229,10 @@ def prompt_constraint(session_attributes, lack, card_title, should_end_session):
     }
     reprompts = {
         'location': "Sorry I must've been in another galaxy. Try saying something like, my zipcode is, or just, " \
-                    "in 98105.",
+                    "in WA 98105.",
         'food': "Sorry I'm a space case. Try saying something like 'Ethiopian food' or 'I want to try a beer bar'."
     }
-    key = random.randint(0, len(lack)-1)
+    key = random.randint(0, len(lack) - 1)
     speech_output = prompts[lack[key]]
     speech_reprompt = reprompts[lack[key]]
 
@@ -247,28 +249,36 @@ def offer_recommendation(session_attributes, card_title, should_end_session):
     :param should_end_session:
     :return:
     """
-    name = session_attributes['restaurant']['name']
-    rating = session_attributes['restaurant']['rating']
-    review_count = session_attributes['restaurant']['review_count']
-    price = session_attributes['restaurant']['price']
-    speech_output = "How about {}? They have {} reviews and their rating is {}.".format(name, review_count, rating)
 
-    # TODO: recommend a better way to get there.
-    distance = session_attributes['restaurant']['walking_distance']
-    walking_duration = session_attributes['restaurant']['walking_duration']
-    driving_duration = session_attributes['restaurant']['driving_duration']
-    speech_output = speech_output + " It is {} away and it takes {} to walk there or {} to drive there.".format(distance, walking_duration, driving_duration)
+    restaurant = session_attributes['restaurant']
+    name = restaurant['name']
+    rating = restaurant['rating']
+    review_count = restaurant['review_count']
+    price = restaurant['price']
 
-    speech_output = speech_output + " Do you need more infomation about this place ?"
+    # TODO: add more
+    output_sample = ["How about {}? They have {} reviews and their rating is {}.".format(name, review_count, rating),
+                    "I find a place called {}? They have {} reviews and their rating is {}.".format(name, review_count, rating),
+                    "{} maybe a great choice for you. Their rating is {} and they have {} reviews.".format(name, rating, review_count),
+                    "{} serves great {}. Their rating is {} and they have {} reviews.".format(name, session_attributes['food'], rating, review_count)]
 
-    speech_reprompt = "Sorry I didn't quite get that. Do you want more information about this place? You say that you "\
-    "want the phone number, the opening hours, the address, or the reviews."
-    # TODO: if a place is too expensive, recommend other cheaper place
-    if price > 3:
-        speech_output = speech_output + " But the price there is pretty expensive. Do you need me to find a cheaper one?"
+    # Randomly pick one from output_sample for speech output
+    speech_output = output_sample[random.randint(0, len(output_sample) - 1)]
+    if price == 1:
+        speech_output = speech_output + " They have a very cheap price. You can ask me to find a fancy one or ask me for more information about this place."
+    elif price == 2:
+        speech_output = speech_output + " They have a moderate price. You can ask me to find a fancy one or ask me for more information about this place."
+    elif price == 3:
+        speech_output = speech_output + " But their price is a little bit expensive. You can ask me to find a cheaper one or ask more information about this place."
+    elif price == 4:
+        speech_output = speech_output + " But their price is expensive. You can ask me to find a cheaper one or ask more information about this place."
 
     if 'previous_rank' in session_attributes and session_attributes['rank'] in session_attributes['previous_rank']:
-        speech_output = 'What else do you want to know about {}'.format(name)
+        speech_output = 'What else do you want to know about {}?'.format(name)
+
+    speech_reprompt = "Sorry I didn't quite get that. Do you want more information about this place? You say that you "\
+    "want the phone number, the opening hours, the address, the duration, or the reviews."
+
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_reprompt, should_end_session))
 
@@ -282,32 +292,54 @@ def offer_more_data(session_attributes, card_title, should_end_session, data_typ
     :return:
     """
 
-    # id for business detail, used for adding more detail info.
+    # id for business detail, used for hour and review search.
     _id = session_attributes['restaurant']['id']
-
     restaurant = session_attributes['restaurant']
 
-    if "phone" in data_type and data_type["phone"].get('value'):
-        phone = restaurant['display_phone']
-        speech_output = "Their phone number is {}.".format(phone)
-    elif "address" in data_type and data_type["address"].get('value'):
-        address = restaurant['display_address']
-        speech_output = "Their address is {}.".format(address)
-    elif "hours" in data_type and data_type["hours"].get('value'):
-        restaurant = search_yelp_business(_id)
-        opening_hour = restaurant['hours'][0]['open'][tm_wday]['end']
-        speech_output = "They open until {}:{} today.".format(opening_hour[0:2], opening_hour[2:4])
-    # Just text excerpt, maybe not useful
-    elif "reviews" in data_type and data_type["reviews"].get('value'):
-        restaurant = search_yelp_business(_id + '/reviews')
-        speech_output = restaurant['reviews'][0]['text']
+    if card_title == 'RequestMoreData':
+        if "phone" in data_type and data_type["phone"].get('value'):
+            phone = restaurant['display_phone']
+            speech_output = "Their phone number is {}.".format(phone)
+        elif "address" in data_type and data_type["address"].get('value'):
+            address = restaurant['display_address']
+            speech_output = "Their address is {}.".format(address)
+        elif "hours" in data_type and data_type["hours"].get('value'):
+            restaurant = search_yelp_business(_id)
+            start_time = restaurant['hours'][0]['open'][tm_wday]['start']
+            end_time = restaurant['hours'][0]['open'][tm_wday]['end']
+
+            if int(start_time[0:2]) < 12:
+                speech_output = "They open from {}:{} am".format(start_time[0:2], start_time[2:4])
+            else:
+                speech_output = "They open from {}:{} pm".format(str(int(start_time[0:2]) - 12), start_time[2:4])
+            if int(end_time[0:2]) < 12:
+                speech_output = speech_output + " and close at {}:{} am.".format(end_time[0:2], end_time[2:4])
+            else:
+                speech_output = speech_output + " and close at {}:{} pm.".format(str(int(end_time[0:2]) - 12), end_time[2:4])
+
+        # Since the api only provide text excerpt. I just use the first sentence of the review.
+        elif "review" in data_type and data_type["review"].get('value'):
+            restaurant = search_yelp_business(_id + '/reviews')
+            name1 = restaurant['reviews'][0]['user']['name'].split(' ')[0]
+            review1 = restaurant['reviews'][0]['text'].split('.')[0]
+            name2 = restaurant['reviews'][1]['user']['name'].split(' ')[0]
+            review2 = restaurant['reviews'][1]['text'].split('.')[0]
+            speech_output = "{} said {}, and {} said {}.".format(name1, review1, name2, review2)
+
+    elif card_title == 'TransportationIntent':
+        # TODO: recommend a better way to get there.
+        distance = restaurant['walking_distance']
+        walking_duration = restaurant['walking_duration']
+        driving_duration = restaurant['driving_duration']
+        transit_duration = restaurant['transit_duration']
+        speech_output = "It is {} away and it takes {} to walk there or {} to drive there.".format(distance, walking_duration, driving_duration)
 
     speech_reprompt = "Sorry I didn't get that. What would you like? Try saying something like what is their phone number?"
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, speech_reprompt, should_end_session))
 
 
-def end_session(session_attributes, card_title, should_end_session = True):
+def end_session(session_attributes, card_title, should_end_session=True):
     """
     The output speech for ending the session
     :param session_attributes:
@@ -345,7 +377,7 @@ def check_constraints(session_attributes):
     return lack
 
 
-def search_with_parameter(session_attributes, rank = 0):
+def search_with_parameter(session_attributes, rank=0):
     """
     call the Yelp API with the parameter dict
     TODO: add more parameter mapping to call YELP API(add more search constraints)
@@ -356,9 +388,22 @@ def search_with_parameter(session_attributes, rank = 0):
     """
     cuisine = session_attributes['food']
     location = session_attributes['location']
-    places = search_yelp(keyword=cuisine, location=location, limit=rank+1)
-    name = places[len(places)-1]['name']
-    print(name)
+    now = session_attributes['now'] if 'now' in session_attributes else False
+    price = session_attributes['price'] if 'price' in session_attributes else '1, 2, 3, 4'
+    places = search_yelp(keyword=cuisine, location=location, open_now=now, price=price, limit=rank + 1)
+    restaurant = places[len(places) - 1]
+    print(restaurant['name'])
+
+    destination_place = restaurant['location']['display_address'][0] + restaurant['location']['display_address'][1]
+    walking_direction = get_google_direction('walking', current_place, destination_place)
+    driving_direction = get_google_direction('driving', current_place, destination_place)
+    transit_direction = get_google_direction('transit', current_place, destination_place)
+    places[len(places) - 1]['walking_distance'] = walking_direction['distance']['text']
+    places[len(places) - 1]['walking_duration'] = walking_direction['duration']['text']
+    places[len(places) - 1]['driving_distance'] = driving_direction['distance']['text']
+    places[len(places) - 1]['driving_duration'] = driving_direction['duration']['text']
+    places[len(places) - 1]['transit_distance'] = transit_direction['distance']['text']
+    places[len(places) - 1]['transit_duration'] = transit_direction['duration']['text']
     update_restaurant_attributes(session_attributes, places[len(places) - 1])
     update_rank_attributes(session_attributes, rank)
 
@@ -387,14 +432,14 @@ def update_restaurant_attributes(session_attributes, restaurant):
     session_attributes['restaurant']['price'] = len(restaurant['price'])
     session_attributes['restaurant']['id'] = restaurant['id']
     session_attributes['restaurant']['display_phone'] = restaurant['display_phone']
-    destination_place = restaurant['location']['display_address'][0] + restaurant['location']['display_address'][1]
-    session_attributes['restaurant']['display_address'] = destination_place
-    walking_direction = get_google_direction('walking', current_place, destination_place)
-    session_attributes['restaurant']['walking_distance'] = walking_direction['distance']['text']
-    session_attributes['restaurant']['walking_duration'] = walking_direction['duration']['text']
-    driving_direction = get_google_direction('driving', current_place, destination_place)
-    session_attributes['restaurant']['driving_distance'] = driving_direction['distance']['text']
-    session_attributes['restaurant']['driving_duration'] = driving_direction['duration']['text']
+    session_attributes['restaurant']['display_address'] = restaurant['location']['display_address'][0] + restaurant['location']['display_address'][1]
+
+    session_attributes['restaurant']['walking_distance'] = restaurant['walking_distance']
+    session_attributes['restaurant']['walking_duration'] = restaurant['walking_duration']
+    session_attributes['restaurant']['driving_distance'] = restaurant['driving_distance']
+    session_attributes['restaurant']['driving_duration'] = restaurant['driving_duration']
+    session_attributes['restaurant']['transit_distance'] = restaurant['transit_distance']
+    session_attributes['restaurant']['transit_duration'] = restaurant['transit_duration']
     return session_attributes
 
 
@@ -446,6 +491,8 @@ def update_session_attribute(session_attributes, key, value):
         if key == 'zip':
             key = 'location'
         session_attributes[key] = value
+        if key == 'now':
+            session_attributes[key] = True
         return
 
 
@@ -460,9 +507,22 @@ def set_constraint(intent, session):
     session_attributes = session['attributes']
     should_end_session = False
 
-    for key in constraints:
-        value = get_value_from_intent(intent, key)
-        update_session_attribute(session_attributes, key, value)
+    if card_title == 'CheapOneIntent':
+        price = ''
+        for i in range(1, session_attributes['restaurant']['price']):
+            price = price + ',' + str(i)
+        session_attributes['price'] = price.lstrip(',')
+
+    elif card_title == 'FancyOneIntent':
+        price = ''
+        for i in range(session_attributes['restaurant']['price'] + 1, 5):
+            price = price + ',' + str(i)
+        session_attributes['price'] = price.lstrip(',')
+
+    else:
+        for key in constraints:
+            value = get_value_from_intent(intent, key)
+            update_session_attribute(session_attributes, key, value)
 
     return build_output(session_attributes, card_title, should_end_session)
 
@@ -698,7 +758,10 @@ def unsolved_output(intent, session):
 # adding your intent handler function name to her when you want to add your new intent
 intent_handler = {
     'SetConstraint': set_constraint,
+    'CheapOneIntent': set_constraint,
+    'FancyOneIntent': set_constraint,
     'RequestMoreData': request_data,
+    'TransportationIntent': request_data,
     'ChangeRecommendation': change_recommendation,
     'ChangeConstraint': change_constraint,
     'GiveFeedback': give_feedback,
@@ -711,10 +774,10 @@ intent_handler = {
 
 # shared state, these intent corresponding to same state to constraint state space
 # these shared the GiveFeedback state.
-shared_state = ['ThankYou','AMAZON.YesIntent','AMAZON.NoIntent']
+shared_state = ['ThankYou', 'AMAZON.YesIntent', 'AMAZON.NoIntent']
 
 # global variables for the constraints
-constraints = ['food', 'location', 'zip', 'now']
+constraints = ['food', 'location', 'zip', 'now', 'price']
 # global variables for the required constraints used in prompt_constraint function
 # will add more in the future
 require_constraints = ['food', 'location']
@@ -722,11 +785,11 @@ require_constraints = ['food', 'location']
 
 previous_state = {
     'SetConstraint': {'initial', 'SetConstraint', 'SetDefaults'},
-    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation', 'RequestMoreData','GiveFeedback'},
-    'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation','GiveFeedback'},
+    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation', 'RequestMoreData', 'GiveFeedback'},
+    'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'GiveFeedback'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
-    'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation','ChangeConstraint', 'GiveFeedback'},
-    'SetDefaults':{'initial', 'SetConstraint', 'SetDefaults'},
+    'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint', 'GiveFeedback'},
+    'SetDefaults': {'initial', 'SetConstraint', 'SetDefaults'},
 }
 
 
@@ -794,7 +857,7 @@ def ask_for_feedback(session, user_history):
     session['attributes']['user_history'] = user_history
     card_title = "Welcome"
     print(user_history)
-    speech_output = "Welcome back to Mos Eisley Cantina. How did you like our recommendation?"
+    speech_output = "Welcome back to Mos Eisley Cantina. How did you like our last recommendation "
     # TODO: change the previous constraints
     if 'restaurant' in user_history:
         speech_output += 'of ' + user_history['restaurant']['name'] + ' ?'
@@ -802,7 +865,6 @@ def ask_for_feedback(session, user_history):
     should_end_session = False
     return build_response(session['attributes'], build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
-
 
 
 def on_session_ended(session_ended_request, session):
@@ -827,8 +889,16 @@ def state_manager(intent, session):
         session['attributes']['state'] = 'initial'
     session['attributes']['previous_state'] = session['attributes']['state']
     session['attributes']['state'] = intent['name']
+
     if intent['name'] in shared_state:
         session['attributes']['state'] = 'GiveFeedback'
+    elif intent['name'] == 'TransportationIntent':
+        session['attributes']['state'] = 'RequestMoreData'
+    elif intent['name'] == 'CheapOneIntent':
+        session['attributes']['state'] = 'SetConstraint'
+    elif intent['name'] == 'FancyOneIntent':
+        session['attributes']['state'] = 'SetConstraint'
+
     if check_previous_state(session):
         return intent_handler[intent['name']](intent, session)
     else:
@@ -859,8 +929,6 @@ def on_intent(intent_request, session):
     #elif intent_name == "AMAZON.NoIntent"
     else:
         raise ValueError("Invalid intent")
-
-
 
 
 

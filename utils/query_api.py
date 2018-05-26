@@ -1,4 +1,4 @@
-import requests
+from botocore.vendored import requests
 
 # API Keys (linked to my personal google and yelp accounts)
 # Maximum number of queries per day: 5000
@@ -126,7 +126,7 @@ def get_google_direction(travelmode, origin, destination, use_id=False, api_key=
 
 
 # --------------------------------- YELP ---------------------------------- #
-def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, open_now=True, radius=8000):
+def search_yelp(keyword, location, api_key=YELP_KEY, limit=1, price=None, open_at=None, open_now=False, radius=8000):
     """Query the YELP Search API by a search term and location.
     Args:
         term: [str] The search term passed to the API.
@@ -152,8 +152,11 @@ def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, op
             distance [double]
     """
 
-    try: assert not(open_at and open_now)
-    except: open_at = None; open_now = True
+    try:
+        assert not(open_at and open_now)
+    except:
+        open_at = None
+        open_now = True
 
     url_params = {
         'term': keyword.replace(' ', '+'),
@@ -162,8 +165,13 @@ def search_yelp(keyword, location, api_key = YELP_KEY, limit=1, open_at=None, op
         'radius': radius
     }
 
-    if open_now: url_params['open_now'] = True
-    elif open_at: url_params['open_at'] = open_at
+    if open_now:
+        url_params['open_now'] = True
+    elif open_at:
+        url_params['open_at'] = open_at
+
+    if price:
+        url_params['price'] = price
 
     places = request(YELP_SEARCH_PATH, api_key, url_params=url_params)
     return places['businesses']
@@ -205,7 +213,7 @@ def request(path, api_key, url_params=None):
 
 if __name__ == '__main__':
     google_places = search_google(keyword='Seattle seafood', location='47.606210, -122.332070', radius='8000')  # location='47.606210, -122.332070', radius=8000
-    yelp_places = search_yelp(keyword='seafood', location='Seattle', limit=10, radius=5000)
+    yelp_places = search_yelp(keyword='seafood', location='Seattle', price='3', limit=10, radius=5000)
     direction = get_google_direction('driving', 'Seattle', 'Portland')
 
     print('Direction: \n', direction)
