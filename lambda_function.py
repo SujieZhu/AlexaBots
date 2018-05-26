@@ -19,8 +19,8 @@ user_info = dynamodb.Table('UserInfo')
 previous_recs = dynamodb.Table('PreviousRecommendations')
 
 # Get time, and we can use this info to infer if the user want places which is open now.
-time_array = time.localtime()    # return time of current time zone, sample return:
-                    # time.struct_time(tm_year=2018, tm_mon=5, tm_mday=15, tm_hour=14, tm_min=53, tm_sec=20, tm_wday=1, tm_yday=135, tm_isdst=1)
+time_array = time.localtime()  # return time of current time zone, sample return:
+# time.struct_time(tm_year=2018, tm_mon=5, tm_mday=15, tm_hour=14, tm_min=53, tm_sec=20, tm_wday=1, tm_yday=135, tm_isdst=1)
 tm_hour = time_array[3]
 tm_min = time_array[4]
 tm_wday = time_array[6]
@@ -605,6 +605,69 @@ def give_feedback(intent, session):
     return
 
 
+def thank_you_handler(intent, session):
+    '''
+    handler for the user said thank you
+    :param intent:
+    :param session:
+    :return:
+    '''
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+    # when asked questions before, second time when the user said thank you or yes
+    if 'asked' in session_attributes:
+        return handle_session_end_request(session)
+    else:
+        return confirm_exit(session_attributes, card_title, should_end_session)
+
+
+def yes_no_handler(intent, session):
+    card_title = intent['name']
+    session_attributes = session['attributes']
+    should_end_session = False
+    # when asked questions before, second time when the user said thank you or yes
+    if 'asked' in session_attributes:
+        if session_attributes['asked'] == 'more_info' or session_attributes['asked'] == 'what_else':
+            # no to 'Do you want more information'
+            if card_title == 'AMAZON.NoIntent':
+                return handle_session_end_request(session)
+            # Yes to 'Do you want more information'
+            else:
+                speech_output ='You can ask their phone number, opening hour and distance.'
+                return build_response(session_attributes, build_speechlet_response(
+                    card_title, speech_output, speech_output, should_end_session))
+    # not asked question before, treat as the Positive feedback
+    else:
+        # Positive feedback
+        if card_title == 'AMAZON.YesIntent':
+            return confirm_exit(session_attributes, card_title, should_end_session)
+        # negative feedback
+        else:
+            # user not satisfied with the recommendation, change another restaurant.
+            rank = session_attributes['rank']
+            # search with the new rank, it will update the restaurant name and the rank number
+            rank = rank + 1
+            print('new search')
+            print(session_attributes)
+            search_with_parameter(session_attributes, rank)
+            # offer a new recommendation based on previous information
+            return offer_recommendation(session_attributes, card_title, should_end_session)
+
+
+
+def confirm_exit(session_attributes, card_title, should_end_session):
+    random_int = random.randint(0, 1)
+    if random_int == 0:
+        speech_output = 'What else can I do for you?'
+        session_attributes['asked'] = 'what_else'
+    else:
+        speech_output = 'Do you want more information?'
+        session_attributes['asked'] = 'more_info'
+    reprompt_output = 'You can ask their phone number, opening hour and distance.'
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_output, should_end_session))
+
 def unsolved_output(intent, session):
     """
     For unsolved state or input, prompt all the current attributes
@@ -691,8 +754,15 @@ intent_handler = {
     'ChangeConstraint': change_constraint,
     'GiveFeedback': give_feedback,
     'Unsolved': unsolved_output,
+    'ThankYou': thank_you_handler,
+    'AMAZON.YesIntent': yes_no_handler,
+    'AMAZON.NoIntent': yes_no_handler,
     'SetDefaults': set_default_zip_or_address
 }
+
+# shared state, these intent corresponding to same state to constraint state space
+# these shared the GiveFeedback state.
+shared_state = ['ThankYou','AMAZON.YesIntent','AMAZON.NoIntent']
 
 # global variables for the constraints
 constraints = ['food', 'location', 'zip', 'now']
@@ -703,8 +773,8 @@ require_constraints = ['food', 'location']
 
 previous_state = {
     'SetConstraint': {'initial', 'SetConstraint', 'SetDefaults'},
-    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation','RequestMoreData'},
-    'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation'},
+    'RequestMoreData': {'SetConstraint', 'ChangeRecommendation', 'RequestMoreData','GiveFeedback'},
+    'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation','GiveFeedback'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
     'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation','ChangeConstraint', 'GiveFeedback'},
     'SetDefaults':{'initial', 'SetConstraint', 'SetDefaults'},
@@ -808,6 +878,8 @@ def state_manager(intent, session):
         session['attributes']['state'] = 'initial'
     session['attributes']['previous_state'] = session['attributes']['state']
     session['attributes']['state'] = intent['name']
+    if intent['name'] in shared_state:
+        session['attributes']['state'] = 'GiveFeedback'
     if check_previous_state(session):
         return intent_handler[intent['name']](intent, session)
     else:
