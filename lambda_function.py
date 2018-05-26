@@ -81,7 +81,7 @@ def set_default_zip_or_address(intent, session):
         attUpdate_value = dict({'home_zip':{'Value':new_home_zip}})
 
         user_info.update_item(Key=key_value, AttributeUpdates=attUpdate_value )
-        session_attributes['which_zip'] = 'home'
+        session_attributes['which_zip'] = 'home and work' if (session_attributes.get('which_address') == 'work') else 'home'
 
     if 'value' in intent['slots']['workzip']:
         new_work_zip = intent['slots']['workzip']['value']
@@ -195,22 +195,29 @@ def build_output(session_attributes, card_title, should_end_session):
 
     if 'ChangeRecommendation' == session_attributes['state']:
         return offer_recommendation(session_attributes, card_title, should_end_session)
-
-    if 'restaurant' in session_attributes:
-        speech_output = "How about " + session_attributes['restaurant'] + " "
         
     if 'SetDefaults' == session_attributes['state']:
         which = ''
+        reprompt = ''
         if session_attributes.get('which_zip'):
             which += session_attributes['which_zip'] + ' zipcode '
         if session_attributes.get('which_address'):
             which += session_attributes['which_address'] + ' address '
+        if 'home' in which and 'work' in which:
+            # TODO: use the address for navigation
+            reprompt += 'Would you like to use your home address to search for restaurant?'
+            session_attributes['asked'] = 'set_home_address'
+        elif 'home' in which:
+            reprompt += 'You can tell me your work addresss or zip'
+        else:
+            reprompt += 'You can tell me your home addresss or zip'
         # print('jeenkies! ', get_item_by_key(user_info, session_attributes['this_user_id'], session_attributes['which_zip'] ))
-        speech_output = "Okay, {} set.".format(which)
+        speech_output = "Okay, {} set. ".format(which)
+        speech_output += reprompt
         
     
     return build_response(session_attributes, build_speechlet_response(
-        card_title, speech_output, speech_output, should_end_session))
+        card_title, speech_output, reprompt, should_end_session))
 
 
 def prompt_constraint(session_attributes, lack, card_title, should_end_session):
@@ -687,7 +694,9 @@ def yes_no_handler(intent, session):
     session_attributes = session['attributes']
     should_end_session = False
     # when asked questions before, second time when the user said thank you or yes
+    print('yes or no handler')
     if 'asked' in session_attributes:
+        # Yes/No handler for confirmation of quit
         if session_attributes['asked'] == 'more_info' or session_attributes['asked'] == 'what_else':
             # no to 'Do you want more information'
             if card_title == 'AMAZON.NoIntent':
@@ -697,6 +706,46 @@ def yes_no_handler(intent, session):
                 speech_output ='You can ask their phone number, opening hour and distance.'
                 return build_response(session_attributes, build_speechlet_response(
                     card_title, speech_output, speech_output, should_end_session))
+
+        # Yes/No handler for set location
+        if session_attributes['asked'] == 'set_home_address':
+            # no to 'use your home address'
+            if card_title == 'AMAZON.NoIntent':
+                speech_output = 'Would you like to use your work address to search for restaurant?'
+                session_attributes['asked'] = 'set_work_address'
+                return build_response(session_attributes, build_speechlet_response(
+                    card_title, speech_output, speech_output, should_end_session))
+            # Yes to 'use your home address'
+            else:
+                user_profile = get_item_by_key(user_info, 'user_id', this_user_id)[0]
+                session_attributes['location'] = user_profile['home_zip'] if 'home_zip' in user_profile \
+                    else user_profile['home_address']
+                lack = check_constraints(session_attributes)
+                # check info is sufficient or not
+                if len(lack) == 0:
+                    # if constraints is sufficient, provide restaurant
+                    return offer_recommendation(session_attributes, card_title, should_end_session)
+                else:
+                    # if not sufficient, ask user to provide other info
+                    return prompt_constraint(session_attributes, lack, card_title, should_end_session)
+
+        if session_attributes['asked'] == 'set_work_address':
+            # Yes to 'use your work address'
+            if card_title == 'AMAZON.YesIntent':
+                this_user_id = session["user"]["userId"]
+                user_profile = get_item_by_key(user_info, 'user_id', this_user_id)[0]
+                session_attributes['location'] = user_profile['work_zip'] if 'work_zip' in user_profile \
+                    else user_profile['work_address']
+
+            lack = check_constraints(session_attributes)
+            # check info is sufficient or not
+            if len(lack) == 0:
+                # if constraints is sufficient, provide restaurant
+                return offer_recommendation(session_attributes, card_title, should_end_session)
+            else:
+                # if not sufficient, ask user to provide other info
+                return prompt_constraint(session_attributes, lack, card_title, should_end_session)
+
     # not asked question before, treat as the Positive feedback
     else:
         # Positive feedback
@@ -715,7 +764,6 @@ def yes_no_handler(intent, session):
             return offer_recommendation(session_attributes, card_title, should_end_session)
 
 
-
 def confirm_exit(session_attributes, card_title, should_end_session):
     random_int = random.randint(0, 1)
     if random_int == 0:
@@ -727,6 +775,7 @@ def confirm_exit(session_attributes, card_title, should_end_session):
     reprompt_output = 'You can ask their phone number, opening hour and distance.'
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_output, should_end_session))
+
 
 def unsolved_output(intent, session):
     """
@@ -784,11 +833,11 @@ require_constraints = ['food', 'location']
 
 
 previous_state = {
-    'SetConstraint': {'initial', 'SetConstraint', 'SetDefaults'},
+    'SetConstraint': {'initial', 'SetConstraint', 'SetDefaults','GiveFeedback'},
     'RequestMoreData': {'SetConstraint', 'ChangeRecommendation', 'RequestMoreData', 'GiveFeedback'},
     'ChangeRecommendation': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'GiveFeedback'},
     'ChangeConstraint': {'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint'},
-    'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint', 'GiveFeedback'},
+    'GiveFeedback': {'AskFeedback', 'SetConstraint', 'RequestMoreData', 'ChangeRecommendation', 'ChangeConstraint', 'GiveFeedback','SetDefaults'},
     'SetDefaults': {'initial', 'SetConstraint', 'SetDefaults'},
 }
 
@@ -827,11 +876,14 @@ def on_launch(launch_request, session):
     # if you want to pretend you're unrecognised for testing make 'this_user_id' into a bogus value like 'abcdef'
     this_user_id = session["user"]["userId"]
     user_history = get_item_by_key(previous_recs, 'user_id', this_user_id)
+    user_profile = get_item_by_key(user_info, 'user_id', this_user_id)
     print(user_history)
-    if not user_history:
+    if not user_profile:
         # if you want to add thing to the DB do it this way:
         # user_info.put_item(Item=make_user_info_item(this_user_id))
         user_info.put_item(Item={'user_id': this_user_id})
+        return prompt_for_defaults()
+    elif not user_history:
         return prompt_for_defaults()
     else:
         # return get_welcome_back_response()
