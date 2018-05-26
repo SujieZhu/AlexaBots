@@ -159,8 +159,8 @@ def prompt_for_defaults():
 def handle_session_end_request(session):
     # end the session and save the user info to the database
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Mos Eisley cantina. We hope you enjoy your meal. Be sure to tell us what" \
-                    "you've thought of it next time we chat!" \
+    speech_output = "Thank you for trying the Mos Eisley cantina. We hope you enjoy your meal. Be sure to tell us what " \
+                    "you've thought of it next time we chat! " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -256,6 +256,11 @@ def offer_recommendation(session_attributes, card_title, should_end_session):
     :param should_end_session:
     :return:
     """
+    # check for no API result case
+    if 'no_api_result' in session_attributes:
+        speech_output = 'Could you please specify the address or the cuisine you want us looking for? '
+        return build_response(session_attributes, build_speechlet_response(
+            card_title, speech_output, speech_output, should_end_session))
 
     restaurant = session_attributes['restaurant']
     name = restaurant['name']
@@ -398,6 +403,12 @@ def search_with_parameter(session_attributes, rank=0):
     now = session_attributes['now'] if 'now' in session_attributes else False
     price = session_attributes['price'] if 'price' in session_attributes else '1, 2, 3, 4'
     places = search_yelp(keyword=cuisine, location=location, open_now=now, price=price, limit=rank + 1)
+    # handle API no search result.
+    if len(places) == 0:
+        session_attributes['no_api_result'] = True
+        return
+    else:
+        session_attributes.pop('no_api_result')
     restaurant = places[len(places) - 1]
     print(restaurant['name'])
 
@@ -649,7 +660,7 @@ def give_feedback(intent, session):
             session_attributes.pop('user_history')
             session_attributes['state'] = 'initial'
             lack = check_constraints(session_attributes)
-            #ask user to provide other info
+            # ask user to provide other info
             return prompt_constraint(session_attributes, lack, card_title, should_end_session)
     # feedback about the recommendation
     else:
@@ -711,7 +722,7 @@ def yes_no_handler(intent, session):
         if session_attributes['asked'] == 'set_home_address':
             # no to 'use your home address'
             if card_title == 'AMAZON.NoIntent':
-                speech_output = 'Would you like to use your work address to search for restaurant?'
+                speech_output = 'Would you like to use your work address for search?'
                 session_attributes['asked'] = 'set_work_address'
                 return build_response(session_attributes, build_speechlet_response(
                     card_title, speech_output, speech_output, should_end_session))
