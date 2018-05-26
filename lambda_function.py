@@ -693,57 +693,6 @@ def unsolved_output(intent, session):
         card_title, speech_output, speech_output, should_end_session))
 
 
-def set_cuisine(intent, session):
-    """ Sets the cuisine in the session and prepares the speech to reply to the
-    user.
-    """
-
-    card_title = intent['name']
-    session_attributes = session['attributes']
-    should_end_session = False
-    cuisine = None
-    if 'food' in intent['slots']:
-        cuisine = intent['slots']['food']['value']
-        session_attributes = update_cuisine_attributes(session_attributes, cuisine)
-
-    # check cuisine is set or not
-    location = get_location(session)
-    print(location, cuisine)
-    if location is not None and cuisine is not None:
-        places = search_yelp(keyword=cuisine, location=location, limit=1)
-        update_restaurant_attributes(session_attributes, places[0])
-
-    return build_output(session_attributes, card_title, should_end_session)
-
-
-def set_location(intent, session):
-    """ Sets the location in the session and prepares the speech to reply to the
-    user.
-    """
-
-    card_title = intent['name']
-    session_attributes = session['attributes']
-    should_end_session = False
-    location = None
-    print(intent)
-    if 'zip' in intent['slots'] and 'value' in intent['slots']['zip']:
-        location = intent['slots']['zip']['value']
-    if 'location' in intent['slots']and 'value' in intent['slots']['location']:
-        location = intent['slots']['location']['value']
-
-    if location is not None:
-        update_location_attributes(session_attributes, location)
-
-        # check cuisine is set or not
-        cuisine = get_cuisine(session)
-        if cuisine is not None:
-            places = search_yelp(keyword=cuisine, location=location, limit=1)
-            update_restaurant_attributes(session_attributes, places[0])
-
-    return build_output(session_attributes, card_title, should_end_session)
-
-
-
 # --------------- Events ------------------
 # intent handler register
 # adding your intent handler function name to her when you want to add your new intent
